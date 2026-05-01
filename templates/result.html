@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results - Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <!-- Emoji added to heading -->
+    <h1>📊 Expense Summary</h1>
+
+    <!-- Summary Card -->
+    <div class="card">
+        <p>
+            <strong>Total Spending:</strong>
+            <span class="amount">₹ {{ "%.2f"|format(total) }}</span>
+        </p>
+        <p>
+            <strong>Average Spending:</strong>
+            <span class="amount">₹ {{ "%.2f"|format(avg) }}</span>
+        </p>
+    </div>
+
+    <!-- Graph Section -->
+    {% if has_expenses %}
+    <div class="graph">
+        <img src="{{ url_for('static', filename='graph.png') }}" alt="Expense Graph">
+    </div>
+    {% else %}
+    <div class="card">
+        <p class="empty-state">📝 No expenses recorded yet. Add your first expense!</p>
+    </div>
+    {% endif %}
+
+    <!-- Recent Expenses Table -->
+    {% if recent_expenses %}
+    <div class="card">
+        <h3>📋 Recent Expenses</h3>
+        <table class="expense-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in recent_expenses %}
+                <tr>
+                    <td>{{ expense.date }}</td>
+                    <td>{{ expense.category }}</td>
+                    <td>₹ {{ "%.2f"|format(expense.amount) }}</td>
+                    <td>
+                        <a href="{{ url_for('delete_expense', date=expense.date, amount=expense.amount) }}"
+                           class="btn-delete"
+                           onclick="return confirm('Delete this expense?')">🗑️ Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <a href="/" class="btn">➕ Add More Expenses</a>
+</div>
+
+</body>
+</html>
