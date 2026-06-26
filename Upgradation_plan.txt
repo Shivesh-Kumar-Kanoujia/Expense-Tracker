@@ -1,0 +1,543 @@
+You are a Senior Full Stack Engineer and UI/UX Designer.
+
+Your task is to upgrade my existing Expense Tracker into a modern, production-ready SaaS application while preserving all existing functionality.
+
+IMPORTANT RULES
+
+• Do NOT rewrite the project from scratch.
+• Improve the existing codebase incrementally.
+• Preserve architecture.
+• Preserve API routes.
+• Preserve database schema unless migration is absolutely necessary.
+• Fix bugs before adding features.
+• Ensure the application remains fully functional after every change.
+• Use clean, modular, reusable code.
+• Follow best practices for React, TypeScript, FastAPI and Supabase.
+
+==================================================
+PHASE 1 — BUG FIXES & STABILITY
+==================================================
+
+First inspect the entire project and fix every existing issue.
+
+Examples include:
+
+• Failed API requests
+• "Failed to load expenses"
+• Guest mode bugs
+• Authentication issues
+• Session persistence
+• Broken routes
+• Form validation
+• State synchronization
+• Infinite re-renders
+• Race conditions
+• Memory leaks
+• Mobile responsiveness issues
+• Error boundaries
+• Loading issues
+• Network failures
+• Dark mode inconsistencies
+• Missing empty states
+• Broken charts
+• Invalid data rendering
+
+Implement proper error handling everywhere.
+
+Every API request should include:
+
+Loading State
+
+Success State
+
+Error State
+
+Retry Button
+
+Graceful fallback
+
+Never allow uncaught exceptions.
+
+==================================================
+PHASE 2 — IMPROVE DASHBOARD
+==================================================
+
+Redesign the dashboard using a premium SaaS layout.
+
+Top section should contain four statistics cards.
+
+Examples:
+
+Total Expenses
+
+Monthly Budget
+
+Remaining Budget
+
+Transactions
+
+Cards should include
+
+• icon
+• title
+• value
+• percentage change
+• subtle hover animation
+• gradient background
+• rounded corners
+• soft border
+• responsive layout
+
+Below this add
+
+Monthly Spending Chart
+
+Category Pie Chart
+
+Recent Transactions
+
+Recent Categories
+
+Quick Actions
+
+Dashboard should immediately communicate financial health.
+
+==================================================
+PHASE 3 — MODERN EMPTY STATES
+==================================================
+
+Replace boring empty cards.
+
+Example:
+
+Large illustration
+
+"No expenses yet"
+
+Start tracking your spending today.
+
+Primary CTA:
+
+Add Expense
+
+Guest users should instead see
+
+Create Account
+
+Every empty page should feel inviting.
+
+==================================================
+PHASE 4 — PREMIUM DESIGN SYSTEM
+==================================================
+
+Maintain current dark theme.
+
+Primary Color
+
+Gold
+
+Background
+
+Near Black
+
+Accent
+
+Warm Gray
+
+Design inspiration:
+
+Apple
+
+Linear
+
+Arc Browser
+
+Stripe
+
+Notion
+
+Avoid bright colors.
+
+Add
+
+Soft shadows
+
+Subtle gradients
+
+Rounded corners
+
+Consistent spacing
+
+8-point spacing system
+
+Typography hierarchy
+
+Better visual balance
+
+==================================================
+PHASE 5 — ANIMATIONS
+==================================================
+
+Add tasteful micro-interactions.
+
+Cards
+
+Hover Lift
+
+Buttons
+
+Scale animation
+
+Sidebar
+
+Smooth transitions
+
+Charts
+
+Animated load
+
+Statistics
+
+Count-up animation
+
+Modal
+
+Fade + Scale
+
+Loading
+
+Skeleton loaders
+
+Use Framer Motion where appropriate.
+
+Animations should feel smooth and premium.
+
+==================================================
+PHASE 6 — EXPENSE LIST
+==================================================
+
+Redesign expense cards.
+
+Each expense should include
+
+Category icon
+
+Title
+
+Description
+
+Date
+
+Amount
+
+Payment method
+
+Category badge
+
+Hover state
+
+Quick actions
+
+Edit
+
+Delete
+
+Duplicate
+
+Cards should have subtle elevation.
+
+==================================================
+PHASE 7 — IMPROVE ADD EXPENSE
+==================================================
+
+Redesign the Add Expense form.
+
+Use
+
+Better spacing
+
+Category icons
+
+Date picker
+
+Currency formatting
+
+Validation
+
+Real-time feedback
+
+Success animation
+
+Loading indicator
+
+Auto-focus
+
+Keyboard accessibility
+
+==================================================
+PHASE 8 — BETTER LOGIN & REGISTER
+==================================================
+
+Current design is good.
+
+Improve it further.
+
+Increase padding.
+
+Improve typography.
+
+Improve copy.
+
+Use premium gradients.
+
+Improve input focus effects.
+
+Support Enter key.
+
+Remember Me.
+
+Forgot Password.
+
+Proper validation.
+
+Password strength meter.
+
+Success/error toast notifications.
+
+==================================================
+PHASE 9 — SIDEBAR
+==================================================
+
+Improve navigation.
+
+Dashboard
+
+Expenses
+
+Categories
+
+Analytics
+
+Reports
+
+Settings
+
+Collapse on mobile.
+
+Smooth animation.
+
+Highlight active route.
+
+==================================================
+PHASE 10 — NAVBAR
+==================================================
+
+Improve top navigation.
+
+Theme Toggle
+
+Notifications
+
+Profile Avatar
+
+Search
+
+Quick Add Button
+
+Sticky navigation
+
+Glassmorphism effect
+
+==================================================
+PHASE 11 — ANALYTICS
+==================================================
+
+Create a beautiful analytics page.
+
+Monthly trends
+
+Category spending
+
+Income vs Expense
+
+Budget usage
+
+Top spending categories
+
+Weekly charts
+
+Export report
+
+==================================================
+PHASE 12 — SETTINGS
+==================================================
+
+Create settings page.
+
+Profile
+
+Theme
+
+Currency
+
+Language
+
+Notification preferences
+
+Account management
+
+==================================================
+PHASE 13 — ACCESSIBILITY
+==================================================
+
+Keyboard navigation
+
+Proper aria labels
+
+Accessible forms
+
+Proper contrast
+
+Focus states
+
+==================================================
+PHASE 14 — PERFORMANCE
+==================================================
+
+Reduce unnecessary renders.
+
+Lazy loading.
+
+Code splitting.
+
+Image optimization.
+
+Memoization.
+
+Caching.
+
+API optimization.
+
+Loading skeletons.
+
+==================================================
+PHASE 15 — CODE QUALITY
+==================================================
+
+Remove duplicated code.
+
+Improve folder structure if needed.
+
+Create reusable components.
+
+Reusable hooks.
+
+Utility functions.
+
+Type safety.
+
+Better naming.
+
+Proper comments only where necessary.
+
+==================================================
+PHASE 16 — RESPONSIVENESS
+==================================================
+
+Perfect support for
+
+Desktop
+
+Laptop
+
+Tablet
+
+Mobile
+
+No horizontal scrolling.
+
+Adaptive sidebar.
+
+Responsive cards.
+
+Responsive charts.
+
+==================================================
+PHASE 17 — SECURITY
+==================================================
+
+Validate all user input.
+
+Protect routes.
+
+Handle expired sessions.
+
+Prevent invalid requests.
+
+Improve authentication flow.
+
+Secure API calls.
+
+==================================================
+PHASE 18 — FINAL QA
+==================================================
+
+Before completing:
+
+Run through every page.
+
+Verify every button.
+
+Verify every route.
+
+Verify every API.
+
+Verify every form.
+
+Verify every modal.
+
+Verify every animation.
+
+Verify responsiveness.
+
+Verify dark mode.
+
+Verify guest mode.
+
+Verify logged-in mode.
+
+Verify loading states.
+
+Verify empty states.
+
+Verify error handling.
+
+There should be no console errors.
+
+No TypeScript errors.
+
+No lint errors.
+
+No broken UI.
+
+No runtime exceptions.
+
+==================================================
+OUTPUT FORMAT
+==================================================
+
+For every improvement:
+
+1. Explain what you're changing.
+
+2. Explain why.
+
+3. Modify only the necessary files.
+
+4. Preserve existing functionality.
+
+5. Keep commits modular if possible.
+
+Do not stop after one feature.
+
+Continue until the application feels like a polished production SaaS product.
