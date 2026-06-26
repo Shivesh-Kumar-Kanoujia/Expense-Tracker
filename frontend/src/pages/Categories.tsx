@@ -38,6 +38,8 @@ import {
   FileText,
   Film,
   MoreHorizontal,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants";
 
@@ -205,6 +207,7 @@ export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [orderedCategories, setOrderedCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -219,12 +222,21 @@ export default function Categories() {
   );
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
       const cats = await getCategories();
       setCategories(cats);
       setOrderedCategories(cats);
-    } catch {
-      showToast("Failed to load categories", "error");
+    } catch (err: any) {
+      const status = err.response?.status;
+      if (status === 401) {
+        setError("Please sign in to manage your categories.");
+      } else if (status === 0) {
+        setError("Unable to connect to the server. Please check your connection.");
+      } else {
+        setError("Failed to load categories. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -261,6 +273,7 @@ export default function Categories() {
     try {
       const cat = await createCategory(newName.trim());
       setCategories((prev) => [...prev, cat]);
+      setOrderedCategories((prev) => [...prev, cat]);
       setNewName("");
       showToast("Category created", "success");
     } catch (err: any) {
@@ -353,6 +366,30 @@ export default function Categories() {
           <CardContent className="p-6">
             <Skeleton variant="rectangular" height="40px" className="mb-6" />
             <SkeletonTable columns={3} rows={4} />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <PageHeader
+          title="Categories"
+          breadcrumb={[
+            { label: "Home", href: "/" },
+            { label: "Categories" },
+          ]}
+        />
+        <Card className="border-error/50">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="h-10 w-10 text-error mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-text mb-1">Unable to load categories</h3>
+            <p className="text-sm text-text-secondary mb-4">{error}</p>
+            <Button icon={<RefreshCw className="h-4 w-4" />} onClick={fetchData}>
+              Try Again
+            </Button>
           </CardContent>
         </Card>
       </div>
