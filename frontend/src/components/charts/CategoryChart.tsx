@@ -1,6 +1,6 @@
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, type ChartOptions } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency, chartColors } from "@/lib/utils";
 import { CATEGORY_COLORS } from "@/lib/constants";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { CategoryBreakdown } from "@/types";
@@ -25,6 +25,7 @@ export function CategoryChart({ data, onCategoryClick, className }: CategoryChar
   }
 
   const total = data.reduce((sum, item) => sum + item.total, 0);
+  const colors = chartColors();
 
   const chartData = {
     labels: data.map((d) => d.category),
@@ -32,7 +33,7 @@ export function CategoryChart({ data, onCategoryClick, className }: CategoryChar
       {
         data: data.map((d) => d.total),
         backgroundColor: data.map((d) => CATEGORY_COLORS[d.category] || "#C9CBCF"),
-        borderColor: "var(--color-bg-card, #1e1e2e)",
+        borderColor: colors.tooltipBg,
         borderWidth: 2,
         hoverOffset: 8,
       },
@@ -50,7 +51,7 @@ export function CategoryChart({ data, onCategoryClick, className }: CategoryChar
           padding: 16,
           usePointStyle: true,
           pointStyle: "circle",
-          color: "var(--color-text, #cdd6f4)",
+          color: colors.tooltipTitle,
           font: { size: 12 },
         },
         onClick: (_e, legendItem) => {
@@ -60,10 +61,10 @@ export function CategoryChart({ data, onCategoryClick, className }: CategoryChar
         },
       },
       tooltip: {
-        backgroundColor: "var(--color-bg-card-hover, #313244)",
-        titleColor: "var(--color-text, #cdd6f4)",
-        bodyColor: "var(--color-text-secondary, #a6adc8)",
-        borderColor: "var(--color-border, #45475a)",
+        backgroundColor: colors.tooltipBg,
+        titleColor: colors.tooltipTitle,
+        bodyColor: colors.tooltipBody,
+        borderColor: colors.tooltipBorder,
         borderWidth: 1,
         padding: 12,
         cornerRadius: 8,
@@ -72,7 +73,7 @@ export function CategoryChart({ data, onCategoryClick, className }: CategoryChar
           label: function (context) {
             const value = context.parsed as number;
             const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
-            return ` ₹${value.toLocaleString("en-IN")} (${pct}%)`;
+            return ` ${formatCurrency(value)} (${pct}%)`;
           },
         },
       },

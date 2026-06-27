@@ -16,7 +16,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { CategoryChart } from "@/components/charts/CategoryChart";
 import { FilterBar } from "@/components/dashboard/FilterBar";
 import { ExpensesTable } from "@/components/dashboard/ExpensesTable";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, chartColors } from "@/lib/utils";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -237,6 +237,8 @@ export default function Dashboard() {
   const GreetIcon = greeting.icon;
 
   const barChartLabels = trends.map((t) => `${MONTH_NAMES[t.month - 1]}`);
+  const colors = chartColors();
+
   const barChartData = {
     labels: barChartLabels,
     datasets: [
@@ -257,10 +259,10 @@ export default function Dashboard() {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "var(--color-bg-card-hover, #313244)",
-        titleColor: "var(--color-text, #cdd6f4)",
-        bodyColor: "var(--color-text-secondary, #a6adc8)",
-        borderColor: "var(--color-border, #45475a)",
+        backgroundColor: colors.tooltipBg,
+        titleColor: colors.tooltipTitle,
+        bodyColor: colors.tooltipBody,
+        borderColor: colors.tooltipBorder,
         borderWidth: 1,
         padding: 12,
         cornerRadius: 8,
@@ -271,15 +273,15 @@ export default function Dashboard() {
     },
     scales: {
       x: {
-        ticks: { color: "var(--color-text-secondary, #a6adc8)" },
-        grid: { color: "var(--color-border, #45475a)", drawOnChartArea: false },
+        ticks: { color: colors.text },
+        grid: { color: colors.grid, drawOnChartArea: false },
       },
       y: {
         ticks: {
-          color: "var(--color-text-secondary, #a6adc8)",
+          color: colors.text,
           callback: (val) => formatCurrency(val as number),
         },
-        grid: { color: "var(--color-border, #45475a)" },
+        grid: { color: colors.grid },
       },
     },
   };

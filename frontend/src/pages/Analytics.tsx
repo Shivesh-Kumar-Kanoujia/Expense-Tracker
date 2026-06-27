@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, chartColors } from "@/lib/utils";
 import { CATEGORY_COLORS } from "@/lib/constants";
 import { ArrowLeft, TrendingUp, DollarSign, PieChart, Download, RefreshCw, AlertTriangle, Zap } from "lucide-react";
 import { Bar, Doughnut } from "react-chartjs-2";
@@ -55,6 +55,8 @@ export default function Analytics() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const colors = chartColors();
+
   const barChartLabels = trends.map((t) => `${MONTH_NAMES[t.month - 1]} ${t.year}`);
   const barChartData = {
     labels: barChartLabels,
@@ -76,10 +78,10 @@ export default function Analytics() {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "var(--color-bg-card-hover, #313244)",
-        titleColor: "var(--color-text, #cdd6f4)",
-        bodyColor: "var(--color-text-secondary, #a6adc8)",
-        borderColor: "var(--color-border, #45475a)",
+        backgroundColor: colors.tooltipBg,
+        titleColor: colors.tooltipTitle,
+        bodyColor: colors.tooltipBody,
+        borderColor: colors.tooltipBorder,
         borderWidth: 1,
         padding: 12,
         cornerRadius: 8,
@@ -90,15 +92,15 @@ export default function Analytics() {
     },
     scales: {
       x: {
-        ticks: { color: "var(--color-text-secondary, #a6adc8)" },
-        grid: { color: "var(--color-border, #45475a)", drawOnChartArea: false },
+        ticks: { color: colors.text },
+        grid: { color: colors.grid, drawOnChartArea: false },
       },
       y: {
         ticks: {
-          color: "var(--color-text-secondary, #a6adc8)",
+          color: colors.text,
           callback: (val) => formatCurrency(val as number),
         },
-        grid: { color: "var(--color-border, #45475a)" },
+        grid: { color: colors.grid },
       },
     },
   };
@@ -109,7 +111,7 @@ export default function Analytics() {
       {
         data: topCategories.map((c) => c.total),
         backgroundColor: topCategories.map((c) => CATEGORY_COLORS[c.category] || "#C9CBCF"),
-        borderColor: "var(--color-bg-card, #1e1e2e)",
+        borderColor: colors.tooltipBg,
         borderWidth: 2,
         hoverOffset: 8,
       },
@@ -127,15 +129,15 @@ export default function Analytics() {
           padding: 16,
           usePointStyle: true,
           pointStyle: "circle",
-          color: "var(--color-text, #cdd6f4)",
+          color: colors.tooltipTitle,
           font: { size: 12 },
         },
       },
       tooltip: {
-        backgroundColor: "var(--color-bg-card-hover, #313244)",
-        titleColor: "var(--color-text, #cdd6f4)",
-        bodyColor: "var(--color-text-secondary, #a6adc8)",
-        borderColor: "var(--color-border, #45475a)",
+        backgroundColor: colors.tooltipBg,
+        titleColor: colors.tooltipTitle,
+        bodyColor: colors.tooltipBody,
+        borderColor: colors.tooltipBorder,
         borderWidth: 1,
         padding: 12,
         cornerRadius: 8,
