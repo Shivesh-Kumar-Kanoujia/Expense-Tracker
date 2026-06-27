@@ -24,7 +24,20 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Le
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+function useIsDark() {
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  useEffect(() => {
+    const handler = () => setIsDark(document.documentElement.classList.contains("dark"));
+    window.addEventListener("storage", handler);
+    const obs = new MutationObserver(handler);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => { window.removeEventListener("storage", handler); obs.disconnect(); };
+  }, []);
+  return isDark;
+}
+
 export default function Analytics() {
+  const isDark = useIsDark();
   const [trends, setTrends] = useState<MonthlyTrend[]>([]);
   const [topCategories, setTopCategories] = useState<TopCategory[]>([]);
   const [loadingTrends, setLoadingTrends] = useState(true);
@@ -35,16 +48,20 @@ export default function Analytics() {
     setLoadingTrends(true);
     setLoadingCategories(true);
     setError("");
+    let trendsErr = "";
+    let catsErr = "";
     Promise.all([
       getMonthlyTrends()
         .then(setTrends)
-        .catch(() => { setError("Unable to load trends. Please try again."); })
+        .catch((e: any) => { trendsErr = e?.response?.status === 401 ? "Sign in required" : "Unable to load trends"; })
         .finally(() => setLoadingTrends(false)),
       getTopCategories()
         .then(setTopCategories)
-        .catch(() => { setError("Unable to load categories. Please try again."); })
+        .catch((e: any) => { catsErr = e?.response?.status === 401 ? "Sign in required" : "Unable to load categories"; })
         .finally(() => setLoadingCategories(false)),
-    ]);
+    ]).then(() => {
+      if (trendsErr || catsErr) setError([trendsErr, catsErr].filter(Boolean).join(". "));
+    });
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -309,7 +326,7 @@ export default function Analytics() {
               </div>
             ) : trends.length > 0 ? (
               <>
-                <div className="h-[300px]">
+                <div className="h-[300px]" key={isDark ? "bar-dark" : "bar-light"}>
                   <Bar data={barChartData} options={barOptions} />
                 </div>
                 {trendsInsight && (
@@ -349,7 +366,7 @@ export default function Analytics() {
               </div>
             ) : topCategories.length > 0 ? (
               <>
-                <div className="flex justify-center">
+                  <div className="flex justify-center" key={isDark ? "donut-dark" : "donut-light"}>
                   <div className="w-full max-w-xs">
                     <Doughnut data={doughnutData} options={doughnutOptions} />
                   </div>

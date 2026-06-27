@@ -55,3 +55,19 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
 export function classNames(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+export function cssVar(name: string, fallback = ""): string {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+export function chartColors() {
+  return {
+    text: cssVar("--color-text-secondary", "#9CA3AF"),
+    grid: cssVar("--color-border", "rgba(255,255,255,0.08)"),
+    tooltipBg: cssVar("--color-bg-card-hover", "#1e1e2e"),
+    tooltipTitle: cssVar("--color-text", "#cdd6f4"),
+    tooltipBody: cssVar("--color-text-secondary", "#a6adc8"),
+    tooltipBorder: cssVar("--color-border", "#45475a"),
+  };
+}
