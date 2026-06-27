@@ -240,7 +240,7 @@ export default function Categories() {
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, []);
 
   useEffect(() => {
     fetchData();

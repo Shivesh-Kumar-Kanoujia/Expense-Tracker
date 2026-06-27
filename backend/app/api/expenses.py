@@ -13,6 +13,13 @@ expense_schema = ExpenseSchema()
 expense_update_schema = ExpenseUpdateSchema()
 
 
+def parse_date(value: str, label: str) -> Any | None:
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        raise ValueError(f"Invalid {label}: '{value}'. Use YYYY-MM-DD.")
+
+
 @expenses_bp.route("", methods=["GET"])
 @login_required
 def list_expenses() -> tuple:
@@ -28,10 +35,13 @@ def list_expenses() -> tuple:
 
     if category:
         query = query.filter(Expense.category == category)
-    if date_from:
-        query = query.filter(Expense.date >= datetime.strptime(date_from, "%Y-%m-%d").date())
-    if date_to:
-        query = query.filter(Expense.date <= datetime.strptime(date_to, "%Y-%m-%d").date())
+    try:
+        if date_from:
+            query = query.filter(Expense.date >= parse_date(date_from, "date_from"))
+        if date_to:
+            query = query.filter(Expense.date <= parse_date(date_to, "date_to"))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
     query = query.order_by(Expense.date.desc(), Expense.created_at.desc())
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)

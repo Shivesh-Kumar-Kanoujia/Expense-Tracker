@@ -155,7 +155,7 @@ export default function Dashboard() {
   }, []);
 
   const fetchExpenses = useCallback(
-    async (p: number = page) => {
+    async (p: number) => {
       setLoadingExpenses(true);
       try {
         const exp = await getExpenses(buildParams(p));
@@ -171,7 +171,7 @@ export default function Dashboard() {
         setLoadingExpenses(false);
       }
     },
-    [buildParams, page]
+    [buildParams]
   );
 
   const retry = useCallback(() => {

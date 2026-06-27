@@ -5,10 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number, currency = "INR", locale = "en-IN"): string {
-  return new Intl.NumberFormat(locale, {
+const CURRENCY_MAP: Record<string, { locale: string }> = {
+  INR: { locale: "en-IN" },
+  USD: { locale: "en-US" },
+  EUR: { locale: "de-DE" },
+  GBP: { locale: "en-GB" },
+};
+
+export function formatCurrency(amount: number, currency?: string): string {
+  const curr = currency || (typeof window !== "undefined" && localStorage.getItem("currency")) || "INR";
+  const config = CURRENCY_MAP[curr] || { locale: "en-IN" };
+  return new Intl.NumberFormat(config.locale, {
     style: "currency",
-    currency,
+    currency: curr,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);

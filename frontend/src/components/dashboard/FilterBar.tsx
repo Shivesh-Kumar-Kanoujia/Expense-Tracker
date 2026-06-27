@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -70,21 +70,24 @@ export function FilterBar({
 }: FilterBarProps) {
   const [activePreset, setActivePreset] = useState<string>("month");
   const [inputValue, setInputValue] = useState(search);
-  const [debounceTimer, setDebounceTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setInputValue(search);
   }, [search]);
 
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
+
   const handleSearchInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
       setInputValue(val);
-      if (debounceTimer) clearTimeout(debounceTimer);
-      const timer = setTimeout(() => onSearchChange(val), 300);
-      setDebounceTimer(timer);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => onSearchChange(val), 300);
     },
-    [onSearchChange, debounceTimer]
+    [onSearchChange]
   );
 
   const handlePreset = useCallback(

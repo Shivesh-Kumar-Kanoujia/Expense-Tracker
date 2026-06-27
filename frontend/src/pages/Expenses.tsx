@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { getExpenses, deleteExpense, type ExpenseParams } from "@/api/expenses";
+import { getExpenses, createExpense, deleteExpense, type ExpenseParams } from "@/api/expenses";
 import { getCategories } from "@/api/categories";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -75,7 +75,7 @@ export default function Expenses() {
   );
 
   const fetchExpenses = useCallback(
-    async (p: number = page) => {
+    async (p: number) => {
       setLoading(true);
       try {
         const exp = await getExpenses(buildParams(p));
@@ -89,7 +89,7 @@ export default function Expenses() {
         setLoading(false);
       }
     },
-    [buildParams, page]
+    [buildParams]
   );
 
   useEffect(() => {
@@ -116,7 +116,6 @@ export default function Expenses() {
   const handleDuplicate = useCallback(
     async (expense: Expense) => {
       try {
-        const { createExpense } = await import("@/api/expenses");
         await createExpense({
           date: expense.date,
           category: expense.category,

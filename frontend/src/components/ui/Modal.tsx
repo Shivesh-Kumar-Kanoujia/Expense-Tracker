@@ -41,8 +41,19 @@ export function Modal({
   const titleId = title ? `modal-title-${Math.random().toString(36).substring(2, 9)}` : undefined;
   const descriptionId = description ? `modal-desc-${Math.random().toString(36).substring(2, 9)}` : undefined;
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const closeOnEscapeRef = useRef(closeOnEscape);
+  closeOnEscapeRef.current = closeOnEscape;
 
   useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!closeOnEscapeRef.current) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+      }
+    }
     if (open) {
       previousActiveElement.current = document.activeElement as HTMLElement;
       document.body.style.overflow = "hidden";
@@ -55,15 +66,7 @@ export function Modal({
       document.body.style.overflow = "";
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, closeOnEscape]);
-
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (!closeOnEscape) return;
-    if (event.key === "Escape") {
-      event.preventDefault();
-      onClose();
-    }
-  };
+  }, [open]);
 
   const handleOverlayClick = (event: React.MouseEvent) => {
     if (closeOnOverlayClick && event.target === event.currentTarget) {

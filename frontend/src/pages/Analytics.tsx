@@ -136,7 +136,8 @@ export default function Analytics() {
         callbacks: {
           label: (ctx) => {
             const val = ctx.parsed as number;
-            return ` ${formatCurrency(val)} (${topCategories[ctx.dataIndex]?.percentage}%)`;
+            const pct = topCategories[ctx.dataIndex]?.percentage ?? 0;
+            return ` ${formatCurrency(val)} (${pct}%)`;
           },
         },
       },
@@ -162,7 +163,9 @@ export default function Analytics() {
     };
   }, [trends]);
 
-  if (error && !loadingTrends && !loadingCategories && trends.length === 0 && topCategories.length === 0) {
+  const showErrorCard = error && !loadingTrends && !loadingCategories;
+
+  if (showErrorCard && trends.length === 0 && topCategories.length === 0) {
     return (
       <div className="space-y-8">
         <PageHeader title="Analytics" description="Analyze your spending patterns" />
@@ -180,6 +183,17 @@ export default function Analytics() {
 
   return (
     <div className="space-y-8">
+      {error && (
+        <Card className="border-warning/50 bg-warning/5">
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0" />
+            <p className="text-sm text-text-secondary flex-1">{error}</p>
+            <Button size="sm" variant="ghost" icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={fetchAll}>
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       <PageHeader
         title="Analytics"
         description="Analyze your spending patterns"
