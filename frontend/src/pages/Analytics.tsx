@@ -19,22 +19,11 @@ import {
   Legend,
   type ChartOptions,
 } from "chart.js";
+import { useIsDark } from "@/hooks/useIsDark";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function useIsDark() {
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
-  useEffect(() => {
-    const handler = () => setIsDark(document.documentElement.classList.contains("dark"));
-    window.addEventListener("storage", handler);
-    const obs = new MutationObserver(handler);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => { window.removeEventListener("storage", handler); obs.disconnect(); };
-  }, []);
-  return isDark;
-}
 
 export default function Analytics() {
   const isDark = useIsDark();

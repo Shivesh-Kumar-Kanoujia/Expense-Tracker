@@ -25,7 +25,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        setUser(null);
       }
+    } else {
+      setUser(null);
     }
     setLoading(false);
   }, []);
