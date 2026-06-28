@@ -51,7 +51,7 @@ def top_categories() -> tuple:
         .limit(10)
     ).all()
 
-    grand_total = sum(r.total for r in rows) if rows else 0
+    grand_total = sum(float(r.total) for r in rows) if rows else 0
 
     return jsonify({
         "categories": [

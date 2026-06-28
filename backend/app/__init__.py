@@ -7,6 +7,7 @@ import structlog
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sentry_sdk.integrations.flask import FlaskIntegration
+import sqlalchemy as sa
 from sqlalchemy import text
 
 from app.config import Config
@@ -78,9 +79,25 @@ def create_app(config_class: type = Config) -> Flask:
     def unauthorized() -> tuple:
         return jsonify({"error": "Authentication required"}), 401
 
-    from app.models.user import User
+    from app.models.user import User, RefreshToken
     from app.models.expense import Expense
     from app.models.category import Category
+
+    with app.app_context():
+        try:
+            inspector = sa.inspect(db.engine)
+            if not inspector.has_table("refresh_tokens"):
+                RefreshToken.__table__.create(db.engine)
+                logger.info("auth_migration", action="created_refresh_tokens_table")
+            if "email_verified" not in [c["name"] for c in inspector.get_columns("users")]:
+                db.session.execute(sa.text("ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE"))
+                logger.info("auth_migration", action="added_email_verified_column")
+            if "role" not in [c["name"] for c in inspector.get_columns("users")]:
+                db.session.execute(sa.text("ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'user'"))
+                logger.info("auth_migration", action="added_role_column")
+            db.session.commit()
+        except Exception as exc:
+            logger.warning("auth_migration_failed", error=str(exc))
 
     @login_manager.user_loader
     def load_user(user_id: str) -> User | None:
@@ -96,7 +113,12 @@ def create_app(config_class: type = Config) -> Flask:
                     token,
                     app.config["JWT_SECRET"],
                     algorithms=["HS256"],
+                    audience=app.config["JWT_AUDIENCE"],
+                    issuer=app.config["JWT_ISSUER"],
+                    options={"require": ["sub", "exp", "iat", "type"]},
                 )
+                if payload.get("type") != "access":
+                    return None
                 return db.session.get(User, int(payload["sub"]))
             except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
                 return None

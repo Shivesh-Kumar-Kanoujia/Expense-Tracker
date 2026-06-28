@@ -12,6 +12,11 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET = os.getenv("JWT_SECRET", SECRET_KEY)
-    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", "3600"))
+    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", "900"))
+    JWT_REFRESH_TOKEN_EXPIRES = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES", str(7 * 24 * 3600)))
+    JWT_ISSUER = os.getenv("JWT_ISSUER", "expense-tracker")
+    JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "expense-tracker-api")
     SENTRY_DSN = os.getenv("SENTRY_DSN", "")
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+    SECURE_COOKIE = os.getenv("SECURE_COOKIE", "false").lower() == "true"
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
