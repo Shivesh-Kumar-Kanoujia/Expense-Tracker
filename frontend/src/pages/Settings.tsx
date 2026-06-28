@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { User, Palette, Globe, Moon, Sun, Bell, Shield, DollarSign } from "lucide-react";
+import { User, Palette, Globe, Moon, Sun, Bell, Shield, DollarSign, Smartphone, Monitor, Trash2 } from "lucide-react";
+import { getSessions, revokeSession, revokeOtherSessions, type SessionInfo } from "@/api/auth";
 
 type Currency = "INR" | "USD" | "EUR" | "GBP";
 type ThemeMode = "light" | "dark" | "system";
@@ -15,6 +16,108 @@ const CURRENCIES: { value: Currency; label: string; symbol: string }[] = [
   { value: "EUR", label: "Euro", symbol: "€" },
   { value: "GBP", label: "British Pound", symbol: "£" },
 ];
+
+function SessionsList() {
+  const { showToast } = useToast();
+  const { user } = useAuth();
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSessions = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const data = await getSessions();
+      setSessions(data);
+    } catch {
+      // silently fail — sessions are supplementary
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => { fetchSessions(); }, [fetchSessions]);
+
+  if (!user) return null;
+
+  const handleRevoke = async (id: number) => {
+    try {
+      await revokeSession(id);
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+      showToast("Session revoked", "success");
+    } catch {
+      showToast("Failed to revoke session", "error");
+    }
+  };
+
+  const handleRevokeOthers = async () => {
+    try {
+      await revokeOtherSessions();
+      await fetchSessions();
+      showToast("Other sessions revoked", "success");
+    } catch {
+      showToast("Failed to revoke sessions", "error");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2].map((i) => (
+          <div key={i} className="h-16 bg-bg-card-hover/50 rounded-lg animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (sessions.length === 0) {
+    return <p className="text-sm text-text-secondary">No active sessions found.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {sessions.map((s) => (
+        <div key={s.id} className="flex items-center justify-between p-4 bg-bg-card-hover/50 rounded-lg">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 rounded-lg bg-accent-light/10 text-accent flex-shrink-0">
+              {s.device_info?.toLowerCase().includes("mobi") ? (
+                <Smartphone className="h-4 w-4" />
+              ) : (
+                <Monitor className="h-4 w-4" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-text truncate">
+                {s.device_info || "Unknown device"}
+              </p>
+              <p className="text-xs text-text-muted">
+                {s.ip_address ? `${s.ip_address} · ` : ""}
+                {new Date(s.created_at).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleRevoke(s.id)}
+            className="p-2 rounded-lg text-text-muted hover:text-error hover:bg-error-light/20 transition-colors flex-shrink-0"
+            title="Revoke session"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      {sessions.length > 1 && (
+        <button
+          type="button"
+          onClick={handleRevokeOthers}
+          className="text-xs text-text-muted hover:text-error transition-colors mt-2"
+        >
+          Revoke all other sessions
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function Settings() {
   const { user } = useAuth();
@@ -180,6 +283,23 @@ export default function Settings() {
               />
             </div>
           </label>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-accent-light/20 text-accent">
+              <Smartphone className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Sessions</CardTitle>
+              <CardDescription>Manage your active sessions</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <SessionsList />
         </CardContent>
       </Card>
 

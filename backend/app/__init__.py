@@ -69,7 +69,11 @@ def create_app(config_class: type = Config) -> Flask:
     logger = structlog.get_logger(__name__)
     logger.info("app_starting", environment=app.config.get("FLASK_ENV", "production"))
 
-    CORS(app, supports_credentials=True)
+    CORS(app,
+         supports_credentials=True,
+         origins=[app.config["FRONTEND_URL"]] if app.config["FRONTEND_URL"] else None,
+         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization"])
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -160,6 +164,17 @@ def create_app(config_class: type = Config) -> Flask:
     @app.before_request
     def start_timer() -> None:
         request._start_time = time.time()
+
+    @app.after_request
+    def add_security_headers(response: Any) -> Any:
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "0"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if app.config["SECURE_COOKIE"]:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        return response
 
     @app.after_request
     def log_request(response: Any) -> Any:

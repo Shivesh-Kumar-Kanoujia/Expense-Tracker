@@ -23,3 +23,24 @@ export async function getMe(): Promise<AuthResponse> {
   const { data } = await client.get("/auth/me");
   return data;
 }
+
+export interface SessionInfo {
+  id: number;
+  device_info: string | null;
+  ip_address: string | null;
+  created_at: string;
+  expires_at: string;
+}
+
+export async function getSessions(): Promise<SessionInfo[]> {
+  const { data } = await client.get("/auth/sessions");
+  return data.sessions;
+}
+
+export async function revokeSession(sessionId: number): Promise<void> {
+  await client.delete(`/auth/sessions/${sessionId}`);
+}
+
+export async function revokeOtherSessions(): Promise<void> {
+  await client.delete("/auth/sessions/others");
+}

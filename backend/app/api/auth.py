@@ -9,6 +9,7 @@ from app.extensions import db
 from app.models.user import User, RefreshToken
 from app.schemas.auth import RegisterSchema, LoginSchema
 from app.utils.rate_limiter import rate_limit
+from app.utils.auth import admin_required
 
 auth_bp = Blueprint("auth", __name__)
 register_schema = RegisterSchema()
@@ -236,6 +237,14 @@ def revoke_session(session_id: int) -> tuple:
     token_record.revoked_at = datetime.now(timezone.utc)
     db.session.commit()
     return jsonify({"message": "Session revoked"}), 200
+
+
+@auth_bp.route("/admin/users", methods=["GET"])
+@login_required
+@admin_required
+def admin_list_users() -> tuple:
+    users: list[User] = db.session.execute(db.select(User).order_by(User.created_at.desc())).scalars().all()
+    return jsonify({"users": [u.to_dict() for u in users]})
 
 
 @auth_bp.route("/sessions/others", methods=["DELETE"])

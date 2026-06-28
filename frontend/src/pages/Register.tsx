@@ -27,6 +27,7 @@ const requirements = [
   { label: "Uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
   { label: "Lowercase letter", test: (p: string) => /[a-z]/.test(p) },
   { label: "Number", test: (p: string) => /[0-9]/.test(p) },
+  { label: "Special character", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
 
 export default function Register() {
