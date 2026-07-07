@@ -4,8 +4,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { User, Palette, Globe, Moon, Sun, Bell, Shield, DollarSign, Smartphone, Monitor, Trash2 } from "lucide-react";
+import { User, Palette, Globe, Moon, Sun, Bell, Shield, DollarSign, Smartphone, Monitor, Trash2, CheckCircle, AlertTriangle, Send } from "lucide-react";
 import { getSessions, revokeSession, revokeOtherSessions, type SessionInfo } from "@/api/auth";
+import client from "@/api/client";
 
 type Currency = "INR" | "USD" | "EUR" | "GBP";
 type ThemeMode = "light" | "dark" | "system";
@@ -167,6 +168,29 @@ export default function Settings() {
                   <p className="font-medium text-text">{user.name}</p>
                   <p className="text-sm text-text-secondary">{user.email}</p>
                 </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                {user.email_verified ? (
+                  <span className="flex items-center gap-1 text-success">
+                    <CheckCircle className="h-3.5 w-3.5" /> Email verified
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-warning">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Email not verified
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await client.post("/auth/resend-verification");
+                          showToast("Verification email sent", "success");
+                        } catch { showToast("Failed to send verification", "error"); }
+                      }}
+                      className="ml-1 text-accent hover:text-accent-hover inline-flex items-center gap-0.5"
+                    >
+                      <Send className="h-3 w-3" /> Resend
+                    </button>
+                  </span>
+                )}
               </div>
               <p className="text-xs text-text-muted">
                 Account created on {new Date(user.created_at).toLocaleDateString()}

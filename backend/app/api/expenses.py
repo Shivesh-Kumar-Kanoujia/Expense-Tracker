@@ -30,11 +30,16 @@ def list_expenses() -> tuple:
     category: Optional[str] = request.args.get("category")
     date_from: Optional[str] = request.args.get("date_from")
     date_to: Optional[str] = request.args.get("date_to")
+    search: Optional[str] = request.args.get("search", "").strip()
+    amount_min: Optional[str] = request.args.get("amount_min")
+    amount_max: Optional[str] = request.args.get("amount_max")
 
     query = db.select(Expense).filter_by(user_id=current_user.id)
 
     if category:
         query = query.filter(Expense.category == category)
+    if search:
+        query = query.filter(Expense.description.ilike(f"%{search}%"))
     try:
         if date_from:
             query = query.filter(Expense.date >= parse_date(date_from, "date_from"))
@@ -42,6 +47,16 @@ def list_expenses() -> tuple:
             query = query.filter(Expense.date <= parse_date(date_to, "date_to"))
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    if amount_min:
+        try:
+            query = query.filter(Expense.amount >= float(amount_min))
+        except ValueError:
+            return jsonify({"error": "Invalid amount_min"}), 400
+    if amount_max:
+        try:
+            query = query.filter(Expense.amount <= float(amount_max))
+        except ValueError:
+            return jsonify({"error": "Invalid amount_max"}), 400
 
     query = query.order_by(Expense.date.desc(), Expense.created_at.desc())
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)

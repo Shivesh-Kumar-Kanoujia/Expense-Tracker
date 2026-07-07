@@ -10,6 +10,7 @@ import {
   BarChart3,
   Settings,
   Receipt,
+  Target,
 } from "lucide-react";
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
   { to: "/expenses", label: "Expenses", icon: Receipt },
   { to: "/add", label: "Add Expense", icon: PlusCircle },
   { to: "/categories", label: "Categories", icon: ListOrdered },
+  { to: "/budgets", label: "Budgets", icon: Target },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

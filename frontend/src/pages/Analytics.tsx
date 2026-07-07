@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { getMonthlyTrends, getTopCategories, type MonthlyTrend, type TopCategory } from "@/api/analytics";
+import { useMemo } from "react";
+import { useMonthlyTrends, useTopCategories } from "@/hooks/useAnalytics";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -27,43 +27,20 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 
 export default function Analytics() {
   const isDark = useIsDark();
-  const [trends, setTrends] = useState<MonthlyTrend[]>([]);
-  const [topCategories, setTopCategories] = useState<TopCategory[]>([]);
-  const [loadingTrends, setLoadingTrends] = useState(true);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [error, setError] = useState("");
+  const { data: trends, isLoading: loadingTrends, isError: trendsError } = useMonthlyTrends();
+  const { data: topCategories, isLoading: loadingCategories, isError: catsError } = useTopCategories();
 
-  const fetchAll = () => {
-    setLoadingTrends(true);
-    setLoadingCategories(true);
-    setError("");
-    let trendsErr = "";
-    let catsErr = "";
-    Promise.all([
-      getMonthlyTrends()
-        .then(setTrends)
-        .catch((e: any) => { trendsErr = e?.response?.status === 401 ? "Sign in required" : "Unable to load trends"; })
-        .finally(() => setLoadingTrends(false)),
-      getTopCategories()
-        .then(setTopCategories)
-        .catch((e: any) => { catsErr = e?.response?.status === 401 ? "Sign in required" : "Unable to load categories"; })
-        .finally(() => setLoadingCategories(false)),
-    ]).then(() => {
-      if (trendsErr || catsErr) setError([trendsErr, catsErr].filter(Boolean).join(". "));
-    });
-  };
-
-  useEffect(() => { fetchAll(); }, []);
+  const error = trendsError || catsError ? "Failed to load some analytics data" : "";
 
   const colors = chartColors();
 
-  const barChartLabels = trends.map((t) => `${MONTH_NAMES[t.month - 1]} ${t.year}`);
+  const barChartLabels = (trends ?? []).map((t) => `${MONTH_NAMES[t.month - 1]} ${t.year}`);
   const barChartData = {
     labels: barChartLabels,
     datasets: [
       {
         label: "Spending",
-        data: trends.map((t) => t.total),
+        data: (trends ?? []).map((t) => t.total),
         backgroundColor: "rgba(212, 175, 55, 0.7)",
         borderColor: "#D4AF37",
         borderWidth: 1,
@@ -106,11 +83,11 @@ export default function Analytics() {
   };
 
   const doughnutData = {
-    labels: topCategories.map((c) => c.category),
+    labels: (topCategories ?? []).map((c) => c.category),
     datasets: [
       {
-        data: topCategories.map((c) => c.total),
-        backgroundColor: topCategories.map((c) => CATEGORY_COLORS[c.category] || "#C9CBCF"),
+        data: (topCategories ?? []).map((c) => c.total),
+        backgroundColor: (topCategories ?? []).map((c) => CATEGORY_COLORS[c.category] || "#C9CBCF"),
         borderColor: colors.tooltipBg,
         borderWidth: 2,
         hoverOffset: 8,
@@ -144,7 +121,7 @@ export default function Analytics() {
         callbacks: {
           label: (ctx) => {
             const val = ctx.parsed as number;
-            const pct = topCategories[ctx.dataIndex]?.percentage ?? 0;
+            const pct = (topCategories ?? [])[ctx.dataIndex]?.percentage ?? 0;
             return ` ${formatCurrency(val)} (${pct}%)`;
           },
         },
@@ -152,12 +129,12 @@ export default function Analytics() {
     },
   };
 
-  const monthlyTotal = trends.reduce((s, t) => s + t.total, 0);
-  const monthlyAvg = trends.length > 0 ? monthlyTotal / trends.length : 0;
-  const topCat = topCategories[0];
+  const monthlyTotal = (trends ?? []).reduce((s, t) => s + t.total, 0);
+  const monthlyAvg = (trends ?? []).length > 0 ? monthlyTotal / (trends ?? []).length : 0;
+  const topCat = (topCategories ?? [])[0];
 
   const trendsInsight = useMemo(() => {
-    if (trends.length < 2) return null;
+    if (!trends || trends.length < 2) return null;
     const sorted = [...trends].sort((a, b) => b.total - a.total);
     const highest = sorted[0];
     const lowest = sorted[sorted.length - 1];
@@ -172,8 +149,9 @@ export default function Analytics() {
   }, [trends]);
 
   const showErrorCard = error && !loadingTrends && !loadingCategories;
+  const noData = (!loadingTrends && (!trends || trends.length === 0)) && (!loadingCategories && (!topCategories || topCategories.length === 0));
 
-  if (showErrorCard && trends.length === 0 && topCategories.length === 0) {
+  if (showErrorCard && noData) {
     return (
       <div className="space-y-8">
         <PageHeader title="Analytics" description="Analyze your spending patterns" />
@@ -182,7 +160,6 @@ export default function Analytics() {
             <AlertTriangle className="h-10 w-10 text-error mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-text mb-1">Unable to load analytics</h3>
             <p className="text-sm text-text-secondary mb-4">{error}</p>
-            <Button icon={<RefreshCw className="h-4 w-4" />} onClick={fetchAll}>Try Again</Button>
           </CardContent>
         </Card>
       </div>
@@ -196,7 +173,7 @@ export default function Analytics() {
           <CardContent className="p-4 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0" />
             <p className="text-sm text-text-secondary flex-1">{error}</p>
-            <Button size="sm" variant="ghost" icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={fetchAll}>
+            <Button size="sm" variant="ghost" icon={<RefreshCw className="h-3.5 w-3.5" />}>
               Retry
             </Button>
           </CardContent>
@@ -213,7 +190,7 @@ export default function Analytics() {
               onClick={() => {
                 const csv = [
                   ["Month", "Amount"].join(","),
-                  ...trends.map((t) => [`${MONTH_NAMES[t.month - 1]} ${t.year}`, t.total].join(",")),
+                  ...(trends ?? []).map((t) => [`${MONTH_NAMES[t.month - 1]} ${t.year}`, t.total].join(",")),
                 ].join("\n");
                 const blob = new Blob([csv], { type: "text/csv" });
                 const url = URL.createObjectURL(blob);
@@ -223,7 +200,7 @@ export default function Analytics() {
                 a.click();
                 URL.revokeObjectURL(url);
               }}
-              disabled={trends.length === 0}
+              disabled={!trends || trends.length === 0}
             >
               Export Report
             </Button>
@@ -277,7 +254,7 @@ export default function Analytics() {
                 {loadingCategories ? (
                   <Skeleton variant="text" width="80px" height="28px" />
                 ) : (
-                  <p className="text-xl font-bold text-text">{topCategories.length}</p>
+                  <p className="text-xl font-bold text-text">{(topCategories ?? []).length}</p>
                 )}
               </div>
             </div>
@@ -315,7 +292,7 @@ export default function Analytics() {
               <div className="h-[300px] flex items-center justify-center">
                 <Skeleton variant="rectangular" width="100%" height="280px" />
               </div>
-            ) : trends.length > 0 ? (
+            ) : trends && trends.length > 0 ? (
               <>
                 <div className="h-[300px]" key={isDark ? "bar-dark" : "bar-light"}>
                   <Bar data={barChartData} options={barOptions} />
@@ -355,9 +332,9 @@ export default function Analytics() {
               <div className="h-[300px] flex items-center justify-center">
                 <Skeleton variant="circular" width="200px" height="200px" />
               </div>
-            ) : topCategories.length > 0 ? (
+            ) : topCategories && topCategories.length > 0 ? (
               <>
-                  <div className="flex justify-center" key={isDark ? "donut-dark" : "donut-light"}>
+                <div className="flex justify-center" key={isDark ? "donut-dark" : "donut-light"}>
                   <div className="w-full max-w-xs">
                     <Doughnut data={doughnutData} options={doughnutOptions} />
                   </div>
@@ -382,7 +359,7 @@ export default function Analytics() {
         </Card>
       </div>
 
-      {topCategories.length > 0 && (
+      {topCategories && topCategories.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Top Spending Categories</CardTitle>

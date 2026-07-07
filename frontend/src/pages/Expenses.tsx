@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { getExpenses, createExpense, deleteExpense, type ExpenseParams } from "@/api/expenses";
-import { getCategories } from "@/api/categories";
+import { useExpenses, useCreateExpense, useDeleteExpense } from "@/hooks/useExpenses";
+import { useCategories } from "@/hooks/useCategories";
+import { type ExpenseParams } from "@/api/expenses";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -35,100 +36,62 @@ const CATEGORY_VARIANTS: Record<string, "default" | "success" | "warning" | "dan
 export default function Expenses() {
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
 
   const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [perPage, setPerPage] = useState(12);
-  const [sortField] = useState<string>("date");
-  const [sortOrder] = useState<"asc" | "desc">("desc");
-
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    getCategories()
-      .then((cats) => setCategories(cats.map((c: Category) => c.name)))
-      .catch(() => {});
-  }, []);
+  const params: ExpenseParams = {
+    page,
+    per_page: perPage,
+    category: selectedCategories.join(",") || undefined,
+    date_from: dateFrom || undefined,
+    date_to: dateTo || undefined,
+    search: search || undefined,
+  };
 
-  const buildParams = useCallback(
-    (p: number): ExpenseParams => ({
-      page: p,
-      per_page: perPage,
-      sort_field: sortField,
-      sort_order: sortOrder,
-      category: selectedCategories.join(",") || undefined,
-      date_from: dateFrom || undefined,
-      date_to: dateTo || undefined,
-      search: search || undefined,
-    }),
-    [perPage, sortField, sortOrder, selectedCategories, dateFrom, dateTo, search]
-  );
+  const { data, isLoading, isError, error } = useExpenses(params);
+  const { data: categoryList } = useCategories();
+  const createExpense = useCreateExpense();
+  const deleteExpense = useDeleteExpense();
 
-  const fetchExpenses = useCallback(
-    async (p: number) => {
-      setLoading(true);
-      try {
-        const exp = await getExpenses(buildParams(p));
-        setExpenses(exp.expenses);
-        setTotal(exp.total);
-        setPage(exp.page);
-        setPages(exp.pages);
-      } catch {
-        setError("Failed to load expenses");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [buildParams]
-  );
+  const categories = (categoryList ?? []).map((c: Category) => c.name);
+  const expenses = data?.expenses ?? [];
+  const total = data?.total ?? 0;
+  const pages = data?.pages ?? 0;
 
-  useEffect(() => {
-    fetchExpenses(1);
-  }, [fetchExpenses]);
-
-  const handleDelete = useCallback(
-    async (id: number) => {
-      setDeleting(true);
-      try {
-        await deleteExpense(id);
-        showToast("Expense deleted", "success");
-        fetchExpenses(page > 1 && expenses.length === 1 ? page - 1 : page);
-      } catch {
-        showToast("Failed to delete expense", "error");
-      } finally {
-        setDeleting(false);
-        setDeleteId(null);
-      }
-    },
-    [page, expenses.length, fetchExpenses, showToast]
-  );
+  const handleDelete = useCallback(async () => {
+    if (deleteId === null) return;
+    try {
+      await deleteExpense.mutateAsync(deleteId);
+      showToast("Expense deleted", "success");
+      if (page > 1 && expenses.length === 1) setPage(page - 1);
+    } catch {
+      showToast("Failed to delete expense", "error");
+    } finally {
+      setDeleteId(null);
+    }
+  }, [deleteId, deleteExpense, showToast, page, expenses.length]);
 
   const handleDuplicate = useCallback(
     async (expense: Expense) => {
       try {
-        await createExpense({
+        await createExpense.mutateAsync({
           date: expense.date,
           category: expense.category,
           amount: expense.amount,
           description: expense.description || undefined,
         });
         showToast("Expense duplicated", "success");
-        fetchExpenses(page);
       } catch {
         showToast("Failed to duplicate expense", "error");
       }
     },
-    [page, fetchExpenses, showToast]
+    [createExpense, showToast]
   );
 
   const handleClearFilters = useCallback(() => {
@@ -142,12 +105,12 @@ export default function Expenses() {
   const from = (page - 1) * perPage + 1;
   const to = Math.min(page * perPage, total);
 
-  if (error && !loading) {
+  if (isError && !isLoading) {
     return (
       <div className="space-y-8">
         <PageHeader title="Expenses" description="Manage all your expenses" />
         <Card>
-          <CardContent className="p-12 text-center text-error">{error}</CardContent>
+          <CardContent className="p-12 text-center text-error">{(error as any)?.message || "Failed to load expenses"}</CardContent>
         </Card>
       </div>
     );
@@ -183,7 +146,7 @@ export default function Expenses() {
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-text-secondary">
-          {loading ? (
+          {isLoading ? (
             <Skeleton variant="text" width="120px" />
           ) : total > 0 ? (
             <>{from}–{to} of {total} expenses</>
@@ -200,7 +163,7 @@ export default function Expenses() {
         </select>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i}>
@@ -227,11 +190,7 @@ export default function Expenses() {
       ) : expenses.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {expenses.map((expense) => (
-            <Card
-              key={expense.id}
-              hover
-              className="group"
-            >
+            <Card key={expense.id} hover className="group">
               <CardContent className="p-5">
                 <div className="flex items-start gap-3 mb-3">
                   <div className="h-11 w-11 rounded-xl bg-accent-light/15 flex items-center justify-center text-lg flex-shrink-0">
@@ -252,9 +211,7 @@ export default function Expenses() {
                   </div>
                 </div>
                 {expense.description && (
-                  <p className="text-sm text-text-secondary line-clamp-2 mb-3">
-                    {expense.description}
-                  </p>
+                  <p className="text-sm text-text-secondary line-clamp-2 mb-3">{expense.description}</p>
                 )}
                 <div className="flex items-center justify-end gap-1 pt-2 border-t border-border opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
                   <Link
@@ -309,7 +266,7 @@ export default function Expenses() {
               variant="ghost"
               size="sm"
               disabled={page <= 1}
-              onClick={() => fetchExpenses(page - 1)}
+              onClick={() => setPage(page - 1)}
               icon={<ChevronLeft className="h-4 w-4" />}
             >
               Previous
@@ -319,12 +276,7 @@ export default function Expenses() {
               const p = start + i;
               if (p > pages) return null;
               return (
-                <Button
-                  key={p}
-                  variant={p === page ? "primary" : "ghost"}
-                  size="sm"
-                  onClick={() => fetchExpenses(p)}
-                >
+                <Button key={p} variant={p === page ? "primary" : "ghost"} size="sm" onClick={() => setPage(p)}>
                   {p}
                 </Button>
               );
@@ -333,7 +285,7 @@ export default function Expenses() {
               variant="ghost"
               size="sm"
               disabled={page >= pages}
-              onClick={() => fetchExpenses(page + 1)}
+              onClick={() => setPage(page + 1)}
               icon={<ChevronRight className="h-4 w-4" />}
               iconPosition="right"
             >
@@ -346,12 +298,12 @@ export default function Expenses() {
       <ConfirmDialog
         open={deleteId !== null}
         onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId !== null && handleDelete(deleteId)}
+        onConfirm={handleDelete}
         title="Delete expense"
         description="Are you sure you want to delete this expense? This action cannot be undone."
         confirmText="Delete"
         variant="danger"
-        loading={deleting}
+        loading={deleteExpense.isPending}
       />
     </div>
   );

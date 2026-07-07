@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { getSummary } from "@/api/summary";
-import { getMonthlyTrends, type MonthlyTrend } from "@/api/analytics";
-import { getExpenses, deleteExpense, type ExpenseParams } from "@/api/expenses";
-import { getCategories } from "@/api/categories";
+import { useSummary } from "@/hooks/useSummary";
+import { useMonthlyTrends } from "@/hooks/useAnalytics";
+import { useExpenses, useDeleteExpense } from "@/hooks/useExpenses";
+import { useCategories } from "@/hooks/useCategories";
+import { useBudgets } from "@/hooks/useBudget";
 import { useToast } from "@/components/ui/Toast";
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -28,9 +27,9 @@ import {
 } from "chart.js";
 import {
   PlusCircle, Wallet, TrendingUp, ListChecks, PiggyBank, BarChart3,
-  Sun, Moon, AlertTriangle, RefreshCw, Target, Zap
+  Sun, Moon, Target, Zap
 } from "lucide-react";
-import type { Summary, Expense, Category } from "@/types";
+import type { Category } from "@/types";
 import { useIsDark } from "@/hooks/useIsDark";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
@@ -44,152 +43,46 @@ function getGreeting() {
   return { text: "Good evening", icon: Moon };
 }
 
-function getErrorMessage(status: number): string {
-  if (status === 0) return "Unable to connect to the server. Please check your internet connection.";
-  if (status === 429) return "Too many requests. Please wait a moment and try again.";
-  if (status >= 500) return "Something went wrong on our end. Please try again.";
-  return "Something unexpected happened. Please try again.";
-}
-
-function computeInsights(summary: Summary) {
-  const insights: { icon: typeof TrendingUp | typeof Zap; text: string }[] = [];
-  if (!summary || summary.count === 0) return insights;
-
-  if (summary.average > 0) {
-    insights.push({
-      icon: TrendingUp,
-      text: `Average expense: ${formatCurrency(summary.average)} per transaction`,
-    });
-  }
-
-  if (summary.categories.length > 0) {
-    const topCat = [...summary.categories].sort((a, b) => b.total - a.total)[0];
-    const pct = summary.total > 0 ? ((topCat.total / summary.total) * 100).toFixed(1) : "0";
-    insights.push({
-      icon: Zap,
-      text: `Most spent on ${topCat.category} (${pct}% of total)`,
-    });
-  }
-
-  return insights;
-}
-
 export default function Dashboard() {
   const isDark = useIsDark();
   const { showToast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [trends, setTrends] = useState<MonthlyTrend[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loadingSummary, setLoadingSummary] = useState(true);
-  const [loadingTrends, setLoadingTrends] = useState(true);
-  const [loadingExpenses, setLoadingExpenses] = useState(true);
-  const [error, setError] = useState("");
-  const [errorStatus, setErrorStatus] = useState(0);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [monthlyBudget, setMonthlyBudget] = useState(() => {
-    const saved = localStorage.getItem("monthlyBudget");
-    return saved ? Number(saved) : 0;
-  });
-  const [budgetInput, setBudgetInput] = useState("");
 
   const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [perPage, setPerPage] = useState(10);
-  const [sortField, setSortField] = useState<string>("date");
+  const [sortField, setSortField] = useState("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [search, setSearch] = useState("");
-  const [searchAmountMin, setSearchAmountMin] = useState("");
-  const [searchAmountMax, setSearchAmountMax] = useState("");
 
-  useEffect(() => {
-    getCategories()
-      .then((cats) => setCategories(cats.map((c: Category) => c.name)))
-      .catch(() => {});
-  }, []);
+  const filterParams = {
+    category: selectedCategories.join(",") || undefined,
+    date_from: dateFrom || undefined,
+    date_to: dateTo || undefined,
+  };
 
-  const buildParams = useCallback(
-    (p: number): ExpenseParams => {
-      const params: ExpenseParams = { page: p, per_page: perPage };
-      if (sortField && sortOrder) {
-        params.sort_field = sortField;
-        params.sort_order = sortOrder;
-      }
-      if (selectedCategories.length > 0) params.category = selectedCategories.join(",");
-      if (dateFrom) params.date_from = dateFrom;
-      if (dateTo) params.date_to = dateTo;
-      if (search) params.search = search;
-      return params;
-    },
-    [perPage, sortField, sortOrder, selectedCategories, dateFrom, dateTo, search]
-  );
+  const { data: summary, isLoading: loadingSummary } = useSummary(filterParams);
+  const { data: trends, isLoading: loadingTrends } = useMonthlyTrends();
+  const { data: expensesData, isLoading: loadingExpenses } = useExpenses({
+    page,
+    per_page: perPage,
+    ...filterParams,
+    search: search || undefined,
+  });
+  const { data: categoryList } = useCategories();
+  const { data: budgetList } = useBudgets({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+  });
+  const deleteExpense = useDeleteExpense();
 
-  const fetchSummary = useCallback(async () => {
-    setLoadingSummary(true);
-    try {
-      const sum = await getSummary({ category: selectedCategories.join(","), date_from: dateFrom, date_to: dateTo });
-      setSummary(sum);
-      setError("");
-    } catch (err: any) {
-      setError(getErrorMessage(err.response?.status || 0));
-      setErrorStatus(err.response?.status || 0);
-    } finally {
-      setLoadingSummary(false);
-    }
-  }, [selectedCategories, dateFrom, dateTo]);
-
-  const fetchTrends = useCallback(async () => {
-    setLoadingTrends(true);
-    try {
-      const data = await getMonthlyTrends();
-      setTrends(data);
-    } catch {
-      /* trends are supplementary */
-    } finally {
-      setLoadingTrends(false);
-    }
-  }, []);
-
-  const fetchExpenses = useCallback(
-    async (p: number) => {
-      setLoadingExpenses(true);
-      try {
-        const exp = await getExpenses(buildParams(p));
-        setExpenses(exp.expenses);
-        setTotal(exp.total);
-        setPage(exp.page);
-        setPages(exp.pages);
-        setError("");
-      } catch (err: any) {
-        setError(getErrorMessage(err.response?.status || 0));
-        setErrorStatus(err.response?.status || 0);
-      } finally {
-        setLoadingExpenses(false);
-      }
-    },
-    [buildParams]
-  );
-
-  const retry = useCallback(() => {
-    fetchSummary();
-    fetchTrends();
-    fetchExpenses(1);
-  }, [fetchSummary, fetchTrends, fetchExpenses]);
-
-  useEffect(() => {
-    fetchSummary();
-    fetchTrends();
-  }, [fetchSummary, fetchTrends]);
-
-  useEffect(() => {
-    fetchExpenses(1);
-  }, [fetchExpenses]);
+  const categories = (categoryList ?? []).map((c: Category) => c.name);
+  const expenses = expensesData?.expenses ?? [];
+  const total = expensesData?.total ?? 0;
+  const pages = expensesData?.pages ?? 0;
 
   const handleSort = useCallback(
     (field: string) => {
@@ -202,15 +95,14 @@ export default function Dashboard() {
   const handleDelete = useCallback(
     async (id: number) => {
       try {
-        await deleteExpense(id);
+        await deleteExpense.mutateAsync(id);
         showToast("Expense deleted", "success");
-        fetchExpenses(page > 1 && expenses.length === 1 ? page - 1 : page);
-        fetchSummary();
+        if (page > 1 && expenses.length === 1) setPage(page - 1);
       } catch {
         showToast("Failed to delete expense", "error");
       }
     },
-    [page, expenses.length, fetchExpenses, fetchSummary, showToast]
+    [deleteExpense, showToast, page, expenses.length]
   );
 
   const handleClearFilters = useCallback(() => {
@@ -218,29 +110,17 @@ export default function Dashboard() {
     setDateFrom("");
     setDateTo("");
     setSearch("");
-    setSearchAmountMin("");
-    setSearchAmountMax("");
     setPage(1);
   }, []);
 
-  const handleSetBudget = useCallback(() => {
-    const val = parseFloat(budgetInput);
-    if (isNaN(val) || val <= 0) return;
-    setMonthlyBudget(val);
-    localStorage.setItem("monthlyBudget", String(val));
-    setBudgetInput("");
-    showToast("Monthly budget set", "success");
-  }, [budgetInput, showToast]);
+
 
   const hasExpenses = summary && summary.count > 0;
   const greeting = useMemo(getGreeting, []);
   const GreetIcon = greeting.icon;
 
-  const barChartLabels = trends.map((t) => `${MONTH_NAMES[t.month - 1]}`);
-  const colors = chartColors();
-
-  const barChartData = {
-    labels: barChartLabels,
+  const barChartData = trends ? {
+    labels: trends.map((t) => `${MONTH_NAMES[t.month - 1]}`),
     datasets: [
       {
         label: "Spending",
@@ -251,8 +131,9 @@ export default function Dashboard() {
         borderRadius: 6,
       },
     ],
-  };
+  } : null;
 
+  const colors = chartColors();
   const barOptions: ChartOptions<"bar"> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -287,19 +168,37 @@ export default function Dashboard() {
   };
 
   const trendsInsight = useMemo(() => {
-    if (trends.length < 2) return null;
+    if (!trends || trends.length < 2) return null;
     const sorted = [...trends].sort((a, b) => b.total - a.total);
     const highest = sorted[0];
-    const lowest = sorted[sorted.length - 1];
     return {
       highest: `${MONTH_NAMES[highest.month - 1]} ${highest.year}`,
       highestAmount: highest.total,
-      lowest: `${MONTH_NAMES[lowest.month - 1]} ${lowest.year}`,
     };
   }, [trends]);
 
-  const insights = useMemo(() => computeInsights(summary!), [summary]);
+  const insights = useMemo(() => {
+    if (!summary || summary.count === 0) return [];
+    const list: { icon: typeof TrendingUp | typeof Zap; text: string }[] = [];
+    if (summary.average > 0) {
+      list.push({
+        icon: TrendingUp,
+        text: `Average expense: ${formatCurrency(summary.average)} per transaction`,
+      });
+    }
+    if (summary.categories.length > 0) {
+      const topCat = [...summary.categories].sort((a, b) => b.total - a.total)[0];
+      const pct = summary.total > 0 ? ((topCat.total / summary.total) * 100).toFixed(1) : "0";
+      list.push({
+        icon: Zap,
+        text: `Most spent on ${topCat.category} (${pct}% of total)`,
+      });
+    }
+    return list;
+  }, [summary]);
 
+  const overallBudget = (budgetList ?? []).find((b) => !b.category);
+  const monthlyBudget = overallBudget?.amount ?? 0;
   const budgetUsed = monthlyBudget > 0 && summary ? (summary.total / monthlyBudget) * 100 : 0;
   const budgetRemaining = monthlyBudget > 0 ? monthlyBudget - (summary?.total || 0) : 0;
 
@@ -348,32 +247,6 @@ export default function Dashboard() {
           Add Expense
         </Button>
       </div>
-
-      {error && (
-        <Card className="border-error/50">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="p-2 rounded-full bg-error-light/30 text-error flex-shrink-0">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-error">Something went wrong</p>
-                <p className="text-sm text-text-secondary mt-1">{error}</p>
-                <div className="flex items-center gap-3 mt-3">
-                  <Button variant="primary" size="sm" icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={retry}>
-                    Try Again
-                  </Button>
-                  {(errorStatus === 401) && (
-                    <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
-                      Sign In
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {loadingSummary && !summary ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -445,7 +318,7 @@ export default function Dashboard() {
                   <div className="h-[250px] flex items-center justify-center">
                     <Skeleton variant="rectangular" width="100%" height="240px" />
                   </div>
-                ) : trends.length > 0 ? (
+                ) : barChartData && trends!.length > 0 ? (
                   <>
                     <div className="h-[250px]" key={isDark ? "bar-dark" : "bar-light"}>
                       <Bar data={barChartData} options={barOptions} />
@@ -519,31 +392,16 @@ export default function Dashboard() {
                         {budgetUsed.toFixed(1)}%
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => { setMonthlyBudget(0); localStorage.removeItem("monthlyBudget"); }}
-                      className="text-xs text-text-muted hover:text-error transition-colors"
-                    >
-                      Reset budget
-                    </button>
+
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm text-text-secondary">
-                      Set a monthly budget to track your spending.
+                      No budget set for this month.
                     </p>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        placeholder="Amount"
-                        value={budgetInput}
-                        onChange={(e) => setBudgetInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSetBudget()}
-                      />
-                      <Button size="sm" onClick={handleSetBudget} disabled={!budgetInput}>
-                        Set
-                      </Button>
-                    </div>
+                    <Button size="sm" onClick={() => navigate("/budgets")}>
+                      Set Budget
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -618,25 +476,6 @@ export default function Dashboard() {
                 onSearchChange={(val) => { setSearch(val); setPage(1); }}
                 onClear={handleClearFilters}
               />
-              <div className="flex items-center gap-3 mt-4">
-                <div className="flex-1">
-                  <Input
-                    type="number"
-                    placeholder="Min amount"
-                    value={searchAmountMin}
-                    onChange={(e) => setSearchAmountMin(e.target.value)}
-                  />
-                </div>
-                <span className="text-text-muted">—</span>
-                <div className="flex-1">
-                  <Input
-                    type="number"
-                    placeholder="Max amount"
-                    value={searchAmountMax}
-                    onChange={(e) => setSearchAmountMax(e.target.value)}
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -647,7 +486,7 @@ export default function Dashboard() {
             pages={pages}
             total={total}
             perPage={perPage}
-            onPageChange={fetchExpenses}
+            onPageChange={(p) => setPage(p)}
             onPerPageChange={(size) => { setPerPage(size); setPage(1); }}
             sortField={sortField}
             sortOrder={sortOrder}

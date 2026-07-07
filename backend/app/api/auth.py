@@ -9,6 +9,7 @@ from app.extensions import db
 from app.models.user import User, RefreshToken
 from app.schemas.auth import RegisterSchema, LoginSchema
 from app.utils.rate_limiter import rate_limit
+from app.utils.login_rate_limiter import login_rate_limit, record_failed_attempt, clear_attempts
 from app.utils.auth import admin_required
 
 auth_bp = Blueprint("auth", __name__)
@@ -112,12 +113,30 @@ def register() -> tuple:
     db.session.add(user)
     db.session.commit()
 
+    now = datetime.now(timezone.utc)
+    verify_token = jwt.encode(
+        {
+            "sub": str(user.id),
+            "email": user.email,
+            "type": "email_verification",
+            "iat": now,
+            "exp": now + timedelta(hours=24),
+            "iss": current_app.config["JWT_ISSUER"],
+        },
+        current_app.config["JWT_SECRET"],
+        algorithm="HS256",
+    )
+    verify_link = f"{current_app.config['FRONTEND_URL']}/verify-email?token={verify_token}"
+    current_app.logger.info("email_verification_link", extra={"email": user.email, "link": verify_link})
+    print(f"\n[DEV] Email verification link for {user.email}: {verify_link}\n")
+
     refresh_raw = _generate_refresh_token(user, ip_address=request.remote_addr)
     return _build_auth_response(user, refresh_raw)
 
 
 @auth_bp.route("/login", methods=["POST"])
 @rate_limit(max_requests=10, window_seconds=60)
+@login_rate_limit
 def login() -> tuple:
     try:
         data = login_schema.load(request.get_json())
@@ -126,8 +145,10 @@ def login() -> tuple:
 
     user = db.session.execute(db.select(User).filter_by(email=data["email"])).scalar()
     if not user or not user.check_password(data["password"]):
+        record_failed_attempt(data["email"])
         return jsonify({"error": "Invalid email or password"}), 401
 
+    clear_attempts(data["email"])
     refresh_raw = _generate_refresh_token(
         user,
         device_info=request.headers.get("User-Agent", None),
@@ -195,6 +216,137 @@ def logout() -> tuple:
 @login_required
 def me() -> tuple:
     return jsonify({"user": current_user.to_dict()})
+
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+@rate_limit(max_requests=3, window_seconds=300)
+def forgot_password() -> tuple:
+    data = request.get_json(silent=True) or {}
+    email = data.get("email", "")
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    user = db.session.execute(db.select(User).filter_by(email=email)).scalar()
+    if not user:
+        return jsonify({"message": "If the email exists, a reset link has been sent."}), 200
+
+    now = datetime.now(timezone.utc)
+    token = jwt.encode(
+        {
+            "sub": str(user.id),
+            "email": user.email,
+            "type": "password_reset",
+            "iat": now,
+            "exp": now + timedelta(hours=1),
+            "iss": current_app.config["JWT_ISSUER"],
+        },
+        current_app.config["JWT_SECRET"],
+        algorithm="HS256",
+    )
+
+    reset_link = f"{current_app.config['FRONTEND_URL']}/reset-password?token={token}"
+    current_app.logger.info("password_reset_link", extra={"email": email, "link": reset_link})
+    print(f"\n[DEV] Password reset link for {email}: {reset_link}\n")
+
+    return jsonify({"message": "If the email exists, a reset link has been sent."}), 200
+
+
+@auth_bp.route("/reset-password", methods=["POST"])
+@rate_limit(max_requests=3, window_seconds=300)
+def reset_password() -> tuple:
+    data = request.get_json(silent=True) or {}
+    token = data.get("token", "")
+    new_password = data.get("password", "")
+
+    if not token or not new_password:
+        return jsonify({"error": "Token and password are required"}), 400
+
+    if len(new_password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
+
+    try:
+        payload = jwt.decode(
+            token,
+            current_app.config["JWT_SECRET"],
+            algorithms=["HS256"],
+            issuer=current_app.config["JWT_ISSUER"],
+        )
+        if payload.get("type") != "password_reset":
+            return jsonify({"error": "Invalid token"}), 400
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Reset link has expired. Please request a new one."}), 400
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid reset token"}), 400
+
+    user = db.session.get(User, int(payload["sub"]))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    user.set_password(new_password)
+    db.session.commit()
+    return jsonify({"message": "Password reset successfully. You can now log in."}), 200
+
+
+@auth_bp.route("/verify-email", methods=["POST"])
+def verify_email() -> tuple:
+    data = request.get_json(silent=True) or {}
+    token = data.get("token", "")
+
+    if not token:
+        return jsonify({"error": "Verification token is required"}), 400
+
+    try:
+        payload = jwt.decode(
+            token,
+            current_app.config["JWT_SECRET"],
+            algorithms=["HS256"],
+            issuer=current_app.config["JWT_ISSUER"],
+        )
+        if payload.get("type") != "email_verification":
+            return jsonify({"error": "Invalid token"}), 400
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Verification link has expired."}), 400
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid verification token"}), 400
+
+    user = db.session.get(User, int(payload["sub"]))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if user.email_verified:
+        return jsonify({"message": "Email already verified."}), 200
+
+    user.email_verified = True
+    db.session.commit()
+    return jsonify({"message": "Email verified successfully."}), 200
+
+
+@auth_bp.route("/resend-verification", methods=["POST"])
+@rate_limit(max_requests=2, window_seconds=300)
+@login_required
+def resend_verification() -> tuple:
+    if current_user.email_verified:
+        return jsonify({"message": "Email already verified."}), 200
+
+    now = datetime.now(timezone.utc)
+    token = jwt.encode(
+        {
+            "sub": str(current_user.id),
+            "email": current_user.email,
+            "type": "email_verification",
+            "iat": now,
+            "exp": now + timedelta(hours=24),
+            "iss": current_app.config["JWT_ISSUER"],
+        },
+        current_app.config["JWT_SECRET"],
+        algorithm="HS256",
+    )
+
+    verify_link = f"{current_app.config['FRONTEND_URL']}/verify-email?token={token}"
+    current_app.logger.info("email_verification_link", extra={"email": current_user.email, "link": verify_link})
+    print(f"\n[DEV] Email verification link for {current_user.email}: {verify_link}\n")
+
+    return jsonify({"message": "Verification email sent."}), 200
 
 
 @auth_bp.route("/sessions", methods=["GET"])

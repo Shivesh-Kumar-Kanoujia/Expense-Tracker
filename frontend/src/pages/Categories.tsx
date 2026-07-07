@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import {
   DndContext,
   closestCenter,
@@ -16,7 +16,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { getCategories, createCategory, updateCategory, deleteCategory } from "@/api/categories";
+import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useReorderCategories } from "@/hooks/useCategories";
 import type { Category } from "@/types";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -204,16 +204,17 @@ function SortableRow({
 
 export default function Categories() {
   const { showToast } = useToast();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [orderedCategories, setOrderedCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: catList, isLoading, isError, error, refetch } = useCategories();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+  const reorderCategories = useReorderCategories();
+
+  const [localOrder, setLocalOrder] = useState<Category[]>([]);
   const [newName, setNewName] = useState("");
-  const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [categoryMeta, setCategoryMeta] = useState<Record<number, { color: string; icon: string }>>({});
 
   const sensors = useSensors(
@@ -221,36 +222,15 @@ export default function Categories() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const cats = await getCategories();
-      setCategories(cats);
-      setOrderedCategories(cats);
-    } catch (err: any) {
-      const status = err.response?.status;
-      if (status === 401) {
-        setError("Please sign in to manage your categories.");
-      } else if (status === 0) {
-        setError("Unable to connect to the server. Please check your connection.");
-      } else {
-        setError("Failed to load categories. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  useEffect(() => {
+    if (catList) setLocalOrder(catList);
+  }, [catList]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    if (categories.length > 0) {
+    if (catList && catList.length > 0) {
       setCategoryMeta((prev) => {
         const meta = { ...prev };
-        categories.forEach((cat) => {
+        catList.forEach((cat: Category) => {
           if (!meta[cat.id]) {
             const found = CATEGORIES.find(
               (c) => c.label.toLowerCase() === cat.name.toLowerCase()
@@ -264,23 +244,18 @@ export default function Categories() {
         return meta;
       });
     }
-  }, [categories]);
+  }, [catList]);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    setCreating(true);
     try {
-      const cat = await createCategory(newName.trim());
-      setCategories((prev) => [...prev, cat]);
-      setOrderedCategories((prev) => [...prev, cat]);
+      await createCategory.mutateAsync(newName.trim());
       setNewName("");
       showToast("Category created", "success");
     } catch (err: any) {
       const msg = err.response?.data?.error;
       showToast(typeof msg === "string" ? msg : "Failed to create category", "error");
-    } finally {
-      setCreating(false);
     }
   };
 
@@ -292,9 +267,7 @@ export default function Categories() {
   const handleSaveEdit = async (id: number) => {
     if (!editName.trim()) return;
     try {
-      const updated = await updateCategory(id, editName.trim());
-      setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
-      setOrderedCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      await updateCategory.mutateAsync({ id, name: editName.trim() });
       setEditingId(null);
       showToast("Category updated", "success");
     } catch (err: any) {
@@ -314,17 +287,12 @@ export default function Categories() {
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
     try {
-      await deleteCategory(deleteTarget.id);
-      setCategories((prev) => prev.filter((c) => c.id !== deleteTarget.id));
-      setOrderedCategories((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      await deleteCategory.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
       showToast("Category deleted", "success");
     } catch {
       showToast("Failed to delete category", "error");
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -332,10 +300,16 @@ export default function Categories() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = orderedCategories.findIndex((c) => c.id === active.id);
-    const newIndex = orderedCategories.findIndex((c) => c.id === over.id);
+    const oldIndex = localOrder.findIndex((c) => c.id === active.id);
+    const newIndex = localOrder.findIndex((c) => c.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    setOrderedCategories(arrayMove(orderedCategories, oldIndex, newIndex));
+
+    const reordered = arrayMove(localOrder, oldIndex, newIndex);
+    setLocalOrder(reordered);
+
+    reorderCategories.mutate(
+      reordered.map((c, i) => ({ id: c.id, sort_order: i }))
+    );
   };
 
   const handleColorChange = (id: number, color: string) => {
@@ -352,16 +326,10 @@ export default function Categories() {
     }));
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div>
-        <PageHeader
-          title="Categories"
-          breadcrumb={[
-            { label: "Home", href: "/" },
-            { label: "Categories" },
-          ]}
-        />
+        <PageHeader title="Categories" breadcrumb={[{ label: "Home", href: "/" }, { label: "Categories" }]} />
         <Card>
           <CardContent className="p-6">
             <Skeleton variant="rectangular" height="40px" className="mb-6" />
@@ -372,22 +340,16 @@ export default function Categories() {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div>
-        <PageHeader
-          title="Categories"
-          breadcrumb={[
-            { label: "Home", href: "/" },
-            { label: "Categories" },
-          ]}
-        />
+        <PageHeader title="Categories" breadcrumb={[{ label: "Home", href: "/" }, { label: "Categories" }]} />
         <Card className="border-error/50">
           <CardContent className="p-8 text-center">
             <AlertTriangle className="h-10 w-10 text-error mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-text mb-1">Unable to load categories</h3>
-            <p className="text-sm text-text-secondary mb-4">{error}</p>
-            <Button icon={<RefreshCw className="h-4 w-4" />} onClick={fetchData}>
+            <p className="text-sm text-text-secondary mb-4">{(error as any)?.message || "Failed to load"}</p>
+            <Button icon={<RefreshCw className="h-4 w-4" />} onClick={() => refetch()}>
               Try Again
             </Button>
           </CardContent>
@@ -398,13 +360,7 @@ export default function Categories() {
 
   return (
     <div>
-      <PageHeader
-        title="Categories"
-        breadcrumb={[
-          { label: "Home", href: "/" },
-          { label: "Categories" },
-        ]}
-      />
+      <PageHeader title="Categories" breadcrumb={[{ label: "Home", href: "/" }, { label: "Categories" }]} />
 
       <Card className="mb-6">
         <CardContent className="p-4">
@@ -418,7 +374,7 @@ export default function Categories() {
             <Button
               type="submit"
               disabled={!newName.trim()}
-              loading={creating}
+              loading={createCategory.isPending}
               icon={<Plus className="h-4 w-4" />}
             >
               Add
@@ -429,33 +385,25 @@ export default function Categories() {
 
       <Card>
         <CardContent className="p-0">
-          {orderedCategories.length === 0 ? (
-            <div className="p-12 text-center text-text-secondary">
-              No categories yet. Create one above.
-            </div>
+          {localOrder.length === 0 ? (
+            <div className="p-12 text-center text-text-secondary">No categories yet. Create one above.</div>
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext
-                items={orderedCategories.map((c) => c.id)}
+                items={localOrder.map((c) => c.id)}
                 strategy={verticalListSortingStrategy}
               >
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10" />
-                      <TableHead className="w-14">
-                        <span className="sr-only">Color</span>
-                      </TableHead>
+                      <TableHead className="w-14"><span className="sr-only">Color</span></TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead className="text-right w-[420px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orderedCategories.map((cat) => (
+                    {localOrder.map((cat) => (
                       <SortableRow
                         key={cat.id}
                         category={cat}
@@ -487,7 +435,7 @@ export default function Categories() {
         description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
         confirmText="Delete"
         variant="danger"
-        loading={deleting}
+        loading={deleteCategory.isPending}
       />
     </div>
   );

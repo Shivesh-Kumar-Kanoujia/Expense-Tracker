@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { getExpenses, updateExpense, deleteExpense } from "@/api/expenses";
+import { useParams, useNavigate } from "react-router-dom";
+import { useExpenses, useUpdateExpense, useDeleteExpense } from "@/hooks/useExpenses";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardFooter } from "@/components/ui/Card";
@@ -8,73 +7,22 @@ import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ExpenseForm } from "@/components/expense/ExpenseForm";
 import type { ExpenseInput } from "@/lib/validations";
-import type { Expense } from "@/types";
 import { Trash2, ArrowLeft } from "lucide-react";
 
 export default function EditExpense() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [expense, setExpense] = useState<Expense | null>(null);
-  const [fetching, setFetching] = useState(true);
-  const [fetchError, setFetchError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const updateExpense = useUpdateExpense();
+  const deleteExpense = useDeleteExpense();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await getExpenses({ per_page: 100 });
-        const found = res.expenses.find((e) => e.id === Number(id));
-        if (!found) {
-          setFetchError("Expense not found");
-          return;
-        }
-        setExpense(found);
-      } catch {
-        setFetchError("Failed to load expense");
-      } finally {
-        setFetching(false);
-      }
-    })();
-  }, [id]);
+  const { data, isLoading, isError } = useExpenses({ per_page: 100 });
+  const expense = data?.expenses?.find((e) => e.id === Number(id));
 
-  const handleSubmit = async (data: ExpenseInput) => {
-    setSaving(true);
-    try {
-      await updateExpense(Number(id), data);
-      showToast("Expense updated", "success");
-      navigate("/");
-    } catch (err: any) {
-      const msg = err.response?.data?.error;
-      throw new Error(typeof msg === "string" ? msg : "Failed to update expense");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await deleteExpense(Number(id));
-      showToast("Expense deleted", "success");
-      navigate("/");
-    } catch {
-      showToast("Failed to delete expense", "error");
-      setDeleting(false);
-    }
-  };
-
-  if (fetching) {
+  if (isLoading) {
     return (
       <div>
-        <PageHeader
-          title="Edit Expense"
-          breadcrumb={[
-            { label: "Dashboard", href: "/" },
-            { label: "Edit Expense" },
-          ]}
-        />
+        <PageHeader title="Edit Expense" breadcrumb={[{ label: "Dashboard", href: "/" }, { label: "Edit Expense" }]} />
         <Card>
           <CardContent className="p-6 space-y-4">
             <Skeleton variant="rectangular" height="40px" />
@@ -87,24 +35,14 @@ export default function EditExpense() {
     );
   }
 
-  if (fetchError) {
+  if (isError || !expense) {
     return (
       <div>
-        <PageHeader
-          title="Edit Expense"
-          breadcrumb={[
-            { label: "Dashboard", href: "/" },
-            { label: "Edit Expense" },
-          ]}
-        />
+        <PageHeader title="Edit Expense" breadcrumb={[{ label: "Dashboard", href: "/" }, { label: "Edit Expense" }]} />
         <Card className="border-error/50">
           <CardContent className="p-6 text-center text-error">
-            <p className="mb-4">{fetchError}</p>
-            <Button
-              variant="outline"
-              icon={<ArrowLeft className="h-4 w-4" />}
-              onClick={() => navigate("/")}
-            >
+            <p className="mb-4">{!expense ? "Expense not found" : "Failed to load expense"}</p>
+            <Button variant="outline" icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate("/")}>
               Back to Dashboard
             </Button>
           </CardContent>
@@ -113,27 +51,42 @@ export default function EditExpense() {
     );
   }
 
+  const handleSubmit = async (data: ExpenseInput) => {
+    try {
+      await updateExpense.mutateAsync({ id: Number(id), ...data });
+      showToast("Expense updated", "success");
+      navigate("/");
+    } catch (err: any) {
+      const msg = err.response?.data?.error;
+      throw new Error(typeof msg === "string" ? msg : "Failed to update expense");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteExpense.mutateAsync(Number(id));
+      showToast("Expense deleted", "success");
+      navigate("/");
+    } catch {
+      showToast("Failed to delete expense", "error");
+    }
+  };
+
   return (
     <div>
-      <PageHeader
-        title="Edit Expense"
-        breadcrumb={[
-          { label: "Dashboard", href: "/" },
-          { label: "Edit Expense" },
-        ]}
-      />
+      <PageHeader title="Edit Expense" breadcrumb={[{ label: "Dashboard", href: "/" }, { label: "Edit Expense" }]} />
       <Card>
         <CardContent>
           <ExpenseForm
             defaultValues={{
-              date: expense!.date,
-              category: expense!.category,
-              amount: expense!.amount,
-              description: expense!.description || "",
+              date: expense.date,
+              category: expense.category,
+              amount: expense.amount,
+              description: expense.description || "",
             }}
             onSubmit={handleSubmit}
             submitLabel="Save Changes"
-            loading={saving}
+            loading={updateExpense.isPending}
             onCancel={() => navigate("/")}
           />
         </CardContent>
@@ -141,7 +94,7 @@ export default function EditExpense() {
           <Button
             variant="danger"
             icon={<Trash2 className="h-4 w-4" />}
-            loading={deleting}
+            loading={deleteExpense.isPending}
             onClick={handleDelete}
           >
             Delete Expense

@@ -2,6 +2,8 @@ export interface User {
   id: number;
   email: string;
   name: string;
+  email_verified: boolean;
+  role: string;
   created_at: string;
 }
 
@@ -49,4 +51,16 @@ export interface Category {
   id: number;
   user_id: number;
   name: string;
+  sort_order?: number;
+}
+
+export interface Budget {
+  id: number;
+  user_id: number;
+  category: string | null;
+  amount: number;
+  month: number;
+  year: number;
+  created_at: string;
+  updated_at: string;
 }

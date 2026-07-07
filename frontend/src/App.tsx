@@ -8,12 +8,16 @@ import { Skeleton } from "./components/ui/Skeleton";
 
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const AddExpense = lazy(() => import("./pages/AddExpense"));
 const EditExpense = lazy(() => import("./pages/EditExpense"));
 const Categories = lazy(() => import("./pages/Categories"));
 const Expenses = lazy(() => import("./pages/Expenses"));
 const Analytics = lazy(() => import("./pages/Analytics"));
+const Budgets = lazy(() => import("./pages/Budgets"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -62,6 +66,9 @@ export default function App() {
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<SuspensePage><AnimatedPage><Login /></AnimatedPage></SuspensePage>} />
             <Route path="/register" element={<SuspensePage><AnimatedPage><Register /></AnimatedPage></SuspensePage>} />
+            <Route path="/forgot-password" element={<SuspensePage><AnimatedPage><ForgotPassword /></AnimatedPage></SuspensePage>} />
+            <Route path="/reset-password" element={<SuspensePage><AnimatedPage><ResetPassword /></AnimatedPage></SuspensePage>} />
+            <Route path="/verify-email" element={<SuspensePage><AnimatedPage><VerifyEmail /></AnimatedPage></SuspensePage>} />
           </Route>
           <Route element={<Layout />}>
             <Route path="/" element={<SuspensePage><AnimatedPage><Dashboard /></AnimatedPage></SuspensePage>} />
@@ -70,6 +77,7 @@ export default function App() {
             <Route path="/edit/:id" element={<SuspensePage><AnimatedPage><EditExpense /></AnimatedPage></SuspensePage>} />
             <Route path="/categories" element={<SuspensePage><AnimatedPage><Categories /></AnimatedPage></SuspensePage>} />
             <Route path="/analytics" element={<SuspensePage><AnimatedPage><Analytics /></AnimatedPage></SuspensePage>} />
+            <Route path="/budgets" element={<SuspensePage><AnimatedPage><Budgets /></AnimatedPage></SuspensePage>} />
             <Route path="/settings" element={<SuspensePage><AnimatedPage><Settings /></AnimatedPage></SuspensePage>} />
           </Route>
           <Route path="*" element={<SuspensePage><AnimatedPage><NotFound /></AnimatedPage></SuspensePage>} />

@@ -86,6 +86,7 @@ def create_app(config_class: type = Config) -> Flask:
     from app.models.user import User, RefreshToken
     from app.models.expense import Expense
     from app.models.category import Category
+    from app.models.budget import Budget
 
     with app.app_context():
         try:
@@ -99,6 +100,12 @@ def create_app(config_class: type = Config) -> Flask:
             if "role" not in [c["name"] for c in inspector.get_columns("users")]:
                 db.session.execute(sa.text("ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'user'"))
                 logger.info("auth_migration", action="added_role_column")
+            if inspector.has_table("categories") and "sort_order" not in [c["name"] for c in inspector.get_columns("categories")]:
+                db.session.execute(sa.text("ALTER TABLE categories ADD COLUMN sort_order INTEGER DEFAULT 0"))
+                logger.info("auth_migration", action="added_sort_order_column")
+            if not inspector.has_table("budgets"):
+                Budget.__table__.create(db.engine)
+                logger.info("auth_migration", action="created_budgets_table")
             db.session.commit()
         except Exception as exc:
             logger.warning("auth_migration_failed", error=str(exc))
@@ -133,12 +140,14 @@ def create_app(config_class: type = Config) -> Flask:
     from app.api.summary import summary_bp
     from app.api.categories import categories_bp
     from app.api.analytics import analytics_bp
+    from app.api.budgets import budgets_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(expenses_bp, url_prefix="/api/expenses")
     app.register_blueprint(summary_bp, url_prefix="/api/summary")
     app.register_blueprint(categories_bp, url_prefix="/api/categories")
     app.register_blueprint(analytics_bp, url_prefix="/api/analytics")
+    app.register_blueprint(budgets_bp, url_prefix="/api/budgets")
 
     @app.route("/health")
     def health() -> tuple[dict, int]:

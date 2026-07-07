@@ -24,7 +24,7 @@ def seed_default_categories(user_id: int) -> None:
 @login_required
 def list_categories() -> tuple:
     seed_default_categories(current_user.id)
-    categories = db.session.execute(db.select(Category).filter_by(user_id=current_user.id).order_by(Category.name)).scalars().all()
+    categories = db.session.execute(db.select(Category).filter_by(user_id=current_user.id).order_by(Category.sort_order, Category.name)).scalars().all()
     return jsonify({"categories": [c.to_dict() for c in categories]})
 
 
@@ -80,3 +80,16 @@ def delete_category(category_id: int) -> tuple:
     db.session.commit()
 
     return jsonify({"message": "Category deleted"})
+
+
+@categories_bp.route("/reorder", methods=["PUT"])
+@login_required
+def reorder_categories() -> tuple:
+    data = request.get_json()
+    order = data.get("order", [])
+    for item in order:
+        cat = db.session.execute(db.select(Category).filter_by(id=item["id"], user_id=current_user.id)).scalar()
+        if cat:
+            cat.sort_order = item["sort_order"]
+    db.session.commit()
+    return jsonify({"message": "Order updated"})

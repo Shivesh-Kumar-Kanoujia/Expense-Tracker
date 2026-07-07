@@ -6,13 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import { loginSchema, type LoginInput } from "@/lib/validations";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { useToast } from "@/components/ui/Toast";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -86,13 +84,12 @@ export default function Login() {
         </div>
 
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => showToast("Password reset coming soon", "info")}
+          <Link
+            to="/forgot-password"
             className="text-sm text-accent hover:text-accent-hover transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
           >
             Forgot password?
-          </button>
+          </Link>
         </div>
 
         <Button type="submit" loading={loading} fullWidth>
