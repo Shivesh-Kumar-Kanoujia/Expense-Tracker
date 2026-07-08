@@ -208,8 +208,8 @@ export default function Analytics() {
         }
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <Card className="hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-accent-light/20 text-accent">
@@ -224,9 +224,16 @@ export default function Analytics() {
                 )}
               </div>
             </div>
+            {!loadingTrends && trends && trends.length > 0 && trendsInsight?.change && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <span className={`text-xs font-medium ${Number(trendsInsight.change) >= 0 ? "text-error" : "text-success"}`}>
+                  {Number(trendsInsight.change) >= 0 ? "↑" : "↓"} {Math.abs(Number(trendsInsight.change))}% overall
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-accent-light/20 text-accent">
@@ -241,9 +248,14 @@ export default function Analytics() {
                 )}
               </div>
             </div>
+            {!loadingTrends && trends && trends.length > 0 && (
+              <p className="text-xs text-text-muted mt-1">
+                Across {trends.length} month{trends.length > 1 ? "s" : ""}
+              </p>
+            )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-accent-light/20 text-accent">
@@ -260,7 +272,7 @@ export default function Analytics() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-accent-light/20 text-accent">
@@ -277,6 +289,11 @@ export default function Analytics() {
                 )}
               </div>
             </div>
+            {topCat && (
+              <p className="text-xs text-text-muted mt-1">
+                {topCat.count} transaction{topCat.count > 1 ? "s" : ""} · {topCat.percentage}% of total
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -284,8 +301,25 @@ export default function Analytics() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Monthly Spending Trends</CardTitle>
-            <CardDescription>Your spending over time</CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle>Monthly Spending Trends</CardTitle>
+                <CardDescription>Your spending over time</CardDescription>
+              </div>
+              {trends && trends.length > 0 && (
+                <div className="flex items-center gap-1 p-0.5 bg-bg-card-hover/50 rounded-lg border border-border w-fit">
+                  {["3M", "6M", "1Y", "All"].map((lbl) => (
+                    <button
+                      key={lbl}
+                      className="px-2.5 py-1 text-xs font-medium rounded-md transition-colors data-[active=true]:bg-text data-[active=true]:text-bg data-[active=true]:shadow-sm text-text-secondary hover:text-text"
+                      data-active={lbl === "6M" ? true : undefined}
+                    >
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {loadingTrends ? (

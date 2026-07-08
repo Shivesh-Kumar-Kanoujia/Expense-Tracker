@@ -27,7 +27,7 @@ import {
 } from "chart.js";
 import {
   PlusCircle, Wallet, TrendingUp, ListChecks, PiggyBank, BarChart3,
-  Sun, Moon, Target, Zap
+  Sun, Moon, Target, Zap, Download, Receipt, ListOrdered
 } from "lucide-react";
 import type { Category } from "@/types";
 import { useIsDark } from "@/hooks/useIsDark";
@@ -227,32 +227,64 @@ export default function Dashboard() {
         </Card>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-accent-light/20 text-accent">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="p-2.5 rounded-xl bg-accent-light/20 text-accent flex-shrink-0 mt-0.5">
             <GreetIcon className="h-5 w-5" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-text tracking-tight">
-              {greeting.text}{user ? `, ${user.name?.split(" ")[0]}` : ""} 👋
+              {greeting.text}{user ? `, ${user.name?.split(" ")[0]}` : ""}
             </h1>
             <p className="text-sm text-text-secondary">
-              {hasExpenses
-                ? `You have ${summary!.count} expense${summary!.count === 1 ? "" : "s"} this period`
-                : "Here's your financial overview"}
+              {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </p>
+            <p className="text-sm text-text-muted mt-0.5">Manage your expenses efficiently.</p>
           </div>
         </div>
-        <Button onClick={() => navigate("/add")} icon={<PlusCircle className="h-4 w-4" />}>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {hasExpenses && summary && (
+            <p className="text-sm text-text-muted hidden sm:block">
+              {summary.count} transaction{summary.count !== 1 ? "s" : ""}
+            </p>
+          )}
+          <Button onClick={() => navigate("/add")} icon={<PlusCircle className="h-4 w-4" />}>
+            Add Expense
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={() => navigate("/add")}
+          className="flex items-center gap-2 px-5 py-3 bg-accent text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group"
+        >
+          <PlusCircle className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
           Add Expense
-        </Button>
+        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {}}
+            className="flex items-center gap-2 px-4 py-2.5 bg-bg-card-hover/50 border border-border rounded-xl text-sm font-medium text-text-secondary hover:text-text hover:bg-bg-card-hover hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.97] transition-all duration-200"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </button>
+          <button
+            onClick={() => navigate("/budgets")}
+            className="flex items-center gap-2 px-4 py-2.5 bg-bg-card-hover/50 border border-border rounded-xl text-sm font-medium text-text-secondary hover:text-text hover:bg-bg-card-hover hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.97] transition-all duration-200"
+          >
+            <Target className="h-4 w-4" />
+            Budget
+          </button>
+        </div>
       </div>
 
       {loadingSummary && !summary ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i}>
-              <CardContent className="p-6 space-y-3">
+              <CardContent className="p-5 space-y-3">
                 <Skeleton variant="text" width="50%" />
                 <Skeleton variant="text" width="70%" height="32px" />
               </CardContent>
@@ -261,11 +293,11 @@ export default function Dashboard() {
         </div>
       ) : hasExpenses ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             <StatsCard
               label="Total Expenses"
               value={formatCurrency(summary!.total)}
-              trend={summary!.count > 0 ? { direction: "up", value: `${summary!.count} transactions` } : undefined}
+              trend={trends && trends.length > 1 ? (trends[trends.length - 1].total >= trends[trends.length - 2].total ? { direction: "up" as const, value: `${trends[trends.length - 1].total > 0 ? ((trends[trends.length - 1].total - trends[trends.length - 2].total) / trends[trends.length - 2].total * 100).toFixed(1) : 0}% vs last month` } : { direction: "down" as const, value: `${((trends[trends.length - 2].total - trends[trends.length - 1].total) / trends[trends.length - 2].total * 100).toFixed(1)}% vs last month` }) : undefined}
               icon={<Wallet className="h-5 w-5" />}
             />
             <StatsCard
@@ -308,7 +340,7 @@ export default function Dashboard() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <Card className="lg:col-span-3">
+            <Card className="lg:col-span-3 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
               <CardHeader>
                 <CardTitle>Monthly Spending</CardTitle>
                 <CardDescription>Your spending over the past months</CardDescription>
@@ -337,62 +369,83 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
               <CardHeader>
                 <CardTitle>Category Breakdown</CardTitle>
+                <CardDescription>Your spending by category</CardDescription>
               </CardHeader>
               <CardContent>
                 <CategoryChart data={summary!.categories} onCategoryClick={(cat) => setSelectedCategories([cat])} />
                 {summary!.categories.length > 0 && (
-                  <p className="text-xs text-text-muted text-center mt-3">
-                    Click a legend item to filter expenses by category
-                  </p>
+                  <>
+                    <div className="mt-3 p-3 rounded-lg bg-accent-light/10 border border-accent/20">
+                      <p className="text-xs text-text-secondary">
+                        <span className="font-medium text-text">Top category:</span>{" "}
+                        {[...summary!.categories].sort((a, b) => b.total - a.total)[0]?.category} at {formatCurrency([...summary!.categories].sort((a, b) => b.total - a.total)[0]?.total || 0)}
+                      </p>
+                    </div>
+                    <p className="text-xs text-text-muted text-center mt-2">
+                      Click a legend item to filter expenses by category
+                    </p>
+                  </>
                 )}
               </CardContent>
             </Card>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
               <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-accent" />
-                  <div>
-                    <CardTitle>Monthly Budget</CardTitle>
-                    <CardDescription>Track your spending against budget</CardDescription>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-accent" />
+                    <div>
+                      <CardTitle>Monthly Budget</CardTitle>
+                      <CardDescription>Track your spending against budget</CardDescription>
+                    </div>
                   </div>
+                  {monthlyBudget > 0 && (
+                    <div className="flex-shrink-0">
+                      <div className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        budgetRemaining >= 0 ? "bg-success-light/30 text-success" : "bg-error-light/30 text-error"
+                      }`}>
+                        {budgetRemaining >= 0 ? "On Track" : "Over Budget"}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
                 {monthlyBudget > 0 ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-secondary">Spent</span>
-                      <span className="font-medium text-text">{formatCurrency(summary!.total)}</span>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-3xl font-bold text-text tracking-tight">{formatCurrency(summary!.total)}</span>
+                      <span className="text-sm text-text-secondary">of {formatCurrency(monthlyBudget)}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-secondary">Budget</span>
-                      <span className="font-medium text-text">{formatCurrency(monthlyBudget)}</span>
-                    </div>
-                    <div className="h-2.5 bg-bg-card-hover rounded-full overflow-hidden">
+                    <div className="relative h-3 bg-bg-card-hover rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
+                        className={`absolute inset-0 rounded-full transition-all duration-700 ease-out ${
                           budgetUsed > 90 ? "bg-error" : budgetUsed > 70 ? "bg-warning" : "bg-success"
                         }`}
                         style={{ width: `${Math.min(budgetUsed, 100)}%` }}
                       />
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-secondary">
-                        {budgetRemaining >= 0
-                          ? `${formatCurrency(budgetRemaining)} remaining`
-                          : `${formatCurrency(Math.abs(budgetRemaining))} over budget`}
-                      </span>
-                      <span className={`font-medium ${budgetRemaining >= 0 ? "text-success" : "text-error"}`}>
-                        {budgetUsed.toFixed(1)}%
-                      </span>
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="p-3 rounded-xl bg-bg-card-hover/50 border border-border">
+                        <p className="text-xs text-text-muted">Remaining</p>
+                        <p className={`text-sm font-bold mt-0.5 ${budgetRemaining >= 0 ? "text-success" : "text-error"}`}>
+                          {budgetRemaining >= 0 ? formatCurrency(budgetRemaining) : `-${formatCurrency(Math.abs(budgetRemaining))}`}
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-bg-card-hover/50 border border-border">
+                        <p className="text-xs text-text-muted">Usage</p>
+                        <p className={`text-sm font-bold mt-0.5 ${
+                          budgetUsed > 90 ? "text-error" : budgetUsed > 70 ? "text-warning" : "text-success"
+                        }`}>
+                          {budgetUsed.toFixed(1)}%
+                        </p>
+                      </div>
                     </div>
-
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -407,12 +460,13 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-3">
+            <Card className="lg:col-span-3 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-accent" />
                   <div>
-                    <CardTitle>Quick Actions</CardTitle>
-                    <CardDescription>Common tasks and shortcuts</CardDescription>
+                    <CardTitle>Quick Overview</CardTitle>
+                    <CardDescription>Navigate to key sections</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -421,7 +475,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => navigate("/add")}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-accent-light/10 border border-accent/20 hover:bg-accent-light/20 transition-all duration-fast group"
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-accent-light/10 border border-accent/20 hover:bg-accent-light/20 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] transition-all duration-200 group"
                   >
                     <div className="p-2.5 rounded-xl bg-accent/15 text-accent group-hover:scale-110 transition-transform duration-fast">
                       <PlusCircle className="h-5 w-5" />
@@ -431,27 +485,27 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => navigate("/expenses")}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-bg-card-hover/50 border border-border hover:bg-bg-card-hover transition-all duration-fast group"
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-bg-card-hover/50 border border-border hover:bg-bg-card-hover hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] transition-all duration-200 group"
                   >
                     <div className="p-2.5 rounded-xl bg-text-muted/10 text-text-muted group-hover:scale-110 transition-transform duration-fast">
-                      <ListChecks className="h-5 w-5" />
+                      <Receipt className="h-5 w-5" />
                     </div>
                     <span className="text-xs font-medium text-text">All Expenses</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => navigate("/categories")}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-bg-card-hover/50 border border-border hover:bg-bg-card-hover transition-all duration-fast group"
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-bg-card-hover/50 border border-border hover:bg-bg-card-hover hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] transition-all duration-200 group"
                   >
                     <div className="p-2.5 rounded-xl bg-text-muted/10 text-text-muted group-hover:scale-110 transition-transform duration-fast">
-                      <ListChecks className="h-5 w-5" />
+                      <ListOrdered className="h-5 w-5" />
                     </div>
                     <span className="text-xs font-medium text-text">Categories</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => navigate("/analytics")}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-bg-card-hover/50 border border-border hover:bg-bg-card-hover transition-all duration-fast group"
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-bg-card-hover/50 border border-border hover:bg-bg-card-hover hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] transition-all duration-200 group"
                   >
                     <div className="p-2.5 rounded-xl bg-text-muted/10 text-text-muted group-hover:scale-110 transition-transform duration-fast">
                       <BarChart3 className="h-5 w-5" />
@@ -505,6 +559,11 @@ export default function Dashboard() {
                 label: user ? "Add your first expense" : "Get Started",
                 onClick: () => user ? navigate("/add") : navigate("/register"),
               }}
+              secondaryAction={user ? {
+                label: "Browse categories",
+                onClick: () => navigate("/categories"),
+                variant: "ghost",
+              } : undefined}
             />
           </CardContent>
         </Card>

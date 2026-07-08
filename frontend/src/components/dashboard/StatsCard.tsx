@@ -19,16 +19,16 @@ interface StatsCardProps {
 export function StatsCard({ label, value, subtitle, trend, icon, className }: StatsCardProps) {
   return (
     <Card className={cn("relative overflow-hidden group hover:shadow-glass hover:-translate-y-1 transition-all duration-300", className)}>
-      <CardContent className="p-6">
+      <CardContent className="p-5">
         <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-text-secondary">{label}</p>
-            <p className="text-2xl font-bold text-text tracking-tight">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-text-muted">{subtitle}</p>
-            )}
-            {trend && (
-              <div className="flex items-center gap-1 mt-2">
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">{label}</p>
+            <p className="text-2xl font-bold text-text tracking-tight leading-none">{value}</p>
+            <div className="flex items-center gap-2">
+              {subtitle && (
+                <p className="text-xs text-text-muted">{subtitle}</p>
+              )}
+              {trend && (
                 <span
                   className={cn(
                     "inline-flex items-center text-xs font-medium",
@@ -46,11 +46,11 @@ export function StatsCard({ label, value, subtitle, trend, icon, className }: St
                   )}
                   {trend.value}
                 </span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
           {icon && (
-            <div className="flex-shrink-0 p-3 rounded-xl bg-accent-light/20 text-accent">
+            <div className="flex-shrink-0 p-2.5 rounded-xl bg-accent-light/20 text-accent">
               {icon}
             </div>
           )}

@@ -7,6 +7,8 @@ import { Navbar } from "@/components/layout/Navbar";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import Chatbot from "@/components/Chatbot";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default function Layout() {
   const { loading } = useAuth();
@@ -41,7 +43,7 @@ export default function Layout() {
         collapsed ? "lg:ml-sidebar-collapsed" : "lg:ml-sidebar"
       )}>
         <Navbar onMenuToggle={() => setMobileOpen((p) => !p)} />
-        <main id="main-content" className="flex-1">
+        <main id="main-content" className="flex-1 pb-24">
           <ErrorBoundary>
             <PageLayout>
               <Outlet />
@@ -49,6 +51,8 @@ export default function Layout() {
           </ErrorBoundary>
         </main>
       </div>
+      <Chatbot />
+      <InstallPrompt />
     </div>
   );
 }

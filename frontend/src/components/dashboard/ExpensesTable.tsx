@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PAGINATION_OPTIONS } from "@/lib/constants";
-import { Edit, Trash2, ChevronLeft, ChevronRight, ArrowDownAZ, ArrowUpAZ, Calendar, Tag, CreditCard } from "lucide-react";
+import { Edit, Trash2, ChevronLeft, ChevronRight, ArrowDownAZ, ArrowUpAZ, Calendar, Tag, CreditCard, Utensils, Plane, ShoppingBag, FileText, Film, Stethoscope, GraduationCap, Home, Zap } from "lucide-react";
 import type { Expense } from "@/types";
 
 interface ExpensesTableProps {
@@ -33,6 +33,18 @@ const CATEGORY_VARIANTS: Record<string, "default" | "success" | "warning" | "dan
   Shopping: "warning",
   Bills: "danger",
   Entertainment: "accent",
+};
+
+const CATEGORY_ICONS: Record<string, typeof Tag> = {
+  Food: Utensils,
+  Travel: Plane,
+  Shopping: ShoppingBag,
+  Bills: FileText,
+  Entertainment: Film,
+  Healthcare: Stethoscope,
+  Education: GraduationCap,
+  Housing: Home,
+  Utilities: Zap,
 };
 
 export function ExpensesTable({
@@ -114,7 +126,7 @@ export function ExpensesTable({
 
   return (
     <div className={cn("space-y-4", className)}>
-      <div className="flex items-center justify-between px-2">
+      <div className="sticky top-0 z-tooltip flex items-center justify-between px-2 py-2 -mx-2 bg-bg/60 backdrop-blur-glass rounded-xl border border-border/50">
          <div className="text-sm font-medium text-text-secondary">
            Showing {from}-{to} of {total}
          </div>
@@ -129,7 +141,10 @@ export function ExpensesTable({
           <div key={expense.id} className="glass p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:shadow-glass hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/30">
             <div className="flex items-start sm:items-center gap-4 flex-1 overflow-hidden">
               <div className="h-12 w-12 rounded-2xl bg-bg border border-border flex items-center justify-center flex-shrink-0 shadow-sm text-text-muted group-hover:text-primary group-hover:border-primary/30 transition-colors">
-                <Tag className="h-5 w-5" />
+                {(() => {
+                  const IconComponent = CATEGORY_ICONS[expense.category] || Tag;
+                  return <IconComponent className="h-5 w-5" />;
+                })()}
               </div>
               <div className="min-w-0 flex-1">
                 <h4 className="font-semibold text-text truncate text-base">
@@ -150,10 +165,13 @@ export function ExpensesTable({
             </div>
             
             <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t border-border sm:border-0">
-              <div className="text-left sm:text-right">
-                <p className="font-bold text-text tabular-nums text-lg">
+              <div className="text-left sm:text-right flex flex-col items-end gap-1">
+                <p className={cn("font-bold tabular-nums text-lg", expense.amount >= 0 ? "text-text" : "text-error")}>
                   {formatCurrency(expense.amount)}
                 </p>
+                {Math.abs(expense.amount) > 5000 && (
+                  <Badge variant="warning" size="sm">Large</Badge>
+                )}
               </div>
               <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                 <Link

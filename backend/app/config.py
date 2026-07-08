@@ -20,3 +20,4 @@ class Config:
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
     SECURE_COOKIE = os.getenv("SECURE_COOKIE", "false").lower() == "true"
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")

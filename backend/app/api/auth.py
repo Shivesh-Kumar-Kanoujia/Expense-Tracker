@@ -58,13 +58,13 @@ def _set_refresh_cookie(response: Any, token: str, expires_in: int) -> None:
         secure=current_app.config["SECURE_COOKIE"],
         samesite="Lax",
         max_age=expires_in,
-        path="/api/auth",
+        path="/",
     )
 
 
 def _clear_refresh_cookie(response: Any) -> None:
     response.set_cookie("refresh_token", "", httponly=True, secure=current_app.config["SECURE_COOKIE"],
-                        samesite="Lax", max_age=0, path="/api/auth")
+                        samesite="Lax", max_age=0, path="/")
 
 
 def _build_auth_response(user: User, refresh_raw: Optional[str] = None) -> tuple:

@@ -90,22 +90,17 @@ def create_app(config_class: type = Config) -> Flask:
 
     with app.app_context():
         try:
+            db.create_all()
             inspector = sa.inspect(db.engine)
-            if not inspector.has_table("refresh_tokens"):
-                RefreshToken.__table__.create(db.engine)
-                logger.info("auth_migration", action="created_refresh_tokens_table")
             if "email_verified" not in [c["name"] for c in inspector.get_columns("users")]:
                 db.session.execute(sa.text("ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE"))
                 logger.info("auth_migration", action="added_email_verified_column")
             if "role" not in [c["name"] for c in inspector.get_columns("users")]:
                 db.session.execute(sa.text("ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'user'"))
                 logger.info("auth_migration", action="added_role_column")
-            if inspector.has_table("categories") and "sort_order" not in [c["name"] for c in inspector.get_columns("categories")]:
+            if "sort_order" not in [c["name"] for c in inspector.get_columns("categories")]:
                 db.session.execute(sa.text("ALTER TABLE categories ADD COLUMN sort_order INTEGER DEFAULT 0"))
                 logger.info("auth_migration", action="added_sort_order_column")
-            if not inspector.has_table("budgets"):
-                Budget.__table__.create(db.engine)
-                logger.info("auth_migration", action="created_budgets_table")
             db.session.commit()
         except Exception as exc:
             logger.warning("auth_migration_failed", error=str(exc))
@@ -141,6 +136,7 @@ def create_app(config_class: type = Config) -> Flask:
     from app.api.categories import categories_bp
     from app.api.analytics import analytics_bp
     from app.api.budgets import budgets_bp
+    from app.api.chat import chat_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(expenses_bp, url_prefix="/api/expenses")
@@ -148,6 +144,7 @@ def create_app(config_class: type = Config) -> Flask:
     app.register_blueprint(categories_bp, url_prefix="/api/categories")
     app.register_blueprint(analytics_bp, url_prefix="/api/analytics")
     app.register_blueprint(budgets_bp, url_prefix="/api/budgets")
+    app.register_blueprint(chat_bp, url_prefix="/api")
 
     @app.route("/health")
     def health() -> tuple[dict, int]:

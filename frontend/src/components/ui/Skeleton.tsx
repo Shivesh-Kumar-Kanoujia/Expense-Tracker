@@ -64,6 +64,37 @@ export function SkeletonCard({ className, ...props }: { className?: string } & O
   );
 }
 
+export function SkeletonChart({ type = "bar", className, ...props }: { type?: "bar" | "doughnut" } & Omit<SkeletonProps, "variant">) {
+  if (type === "doughnut") {
+    return (
+      <div className={cn("flex flex-col items-center gap-6 py-8", className)} {...props}>
+        <Skeleton variant="circular" width="200px" height="200px" />
+        <div className="flex gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="rectangular" width="80px" height="24px" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const barHeights = [120, 80, 160, 60, 200, 100, 140];
+
+  return (
+    <div className={cn("flex items-end gap-3 py-6 px-4", className)} {...props}>
+      {barHeights.map((h, i) => (
+        <Skeleton
+          key={i}
+          variant="rectangular"
+          width="100%"
+          height={`${h}px`}
+          className="flex-1"
+        />
+      ))}
+    </div>
+  );
+}
+
 export function SkeletonTable({ rows = 5, columns = 4, className, ...props }: { rows?: number; columns?: number } & Omit<SkeletonProps, "variant">) {
   return (
     <div className={cn("overflow-x-auto", className)} {...props}>
