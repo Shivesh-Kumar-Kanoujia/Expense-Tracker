@@ -22,7 +22,7 @@ services:
       - key: SECURE_COOKIE
         value: "true"
       - key: FRONTEND_URL
-        value: https://expense-tracker-hcz6z26p5-noir9.vercel.app/
+        value: https://expense-tracker-noir9.vercel.app
 
 databases:
   - name: expense-tracker-db

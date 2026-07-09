@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://expense-tracker-199h.onrender.com" }
+    { "source": "/api/(.*)", "destination": "https://expense-tracker-199h.onrender.com/api/$1" }
   ]
 }
