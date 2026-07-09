@@ -56,7 +56,7 @@ def _set_refresh_cookie(response: Any, token: str, expires_in: int) -> None:
         token,
         httponly=True,
         secure=current_app.config["SECURE_COOKIE"],
-        samesite="None",
+        samesite="Lax",
         max_age=expires_in,
         path="/",
     )
@@ -64,7 +64,7 @@ def _set_refresh_cookie(response: Any, token: str, expires_in: int) -> None:
 
 def _clear_refresh_cookie(response: Any) -> None:
     response.set_cookie("refresh_token", "", httponly=True, secure=current_app.config["SECURE_COOKIE"],
-                        samesite="None", max_age=0, path="/")
+                        samesite="Lax", max_age=0, path="/")
 
 
 def _build_auth_response(user: User, refresh_raw: Optional[str] = None) -> tuple:

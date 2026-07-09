@@ -3,9 +3,6 @@ import type { AxiosError } from "axios";
 
 const AUTH_EVENT = "auth:unauthorized";
 
-const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-const API_BASE = isLocal ? "/api" : "https://expense-tracker-199h.onrender.com/api";
-
 let accessToken: string | null = null;
 
 export function setAccessToken(token: string | null) {
@@ -17,7 +14,7 @@ export function getAccessToken(): string | null {
 }
 
 const client = axios.create({
-  baseURL: API_BASE,
+  baseURL: "/api",
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
@@ -67,7 +64,7 @@ client.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          `${API_BASE}/auth/refresh`,
+          "/api/auth/refresh",
           {},
           { withCredentials: true }
         );
