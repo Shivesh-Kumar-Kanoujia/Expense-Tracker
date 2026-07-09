@@ -264,7 +264,26 @@ export default function Dashboard() {
         </button>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {}}
+            onClick={async () => {
+              try {
+                const { getExpenses } = await import("@/api/expenses");
+                const res = await getExpenses({ per_page: 10000, sort_field: "date", sort_order: "desc" });
+                const rows = res.expenses ?? [];
+                const csv = [
+                  ["Date", "Description", "Category", "Amount"].join(","),
+                  ...rows.map((e: any) =>
+                    [`"${e.date}"`, `"${(e.description || "").replace(/"/g, '""')}"`, `"${e.category}"`, e.amount].join(",")
+                  ),
+                ].join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "expenses.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch {}
+            }}
             className="flex items-center gap-2 px-4 py-2.5 bg-bg-card-hover/50 border border-border rounded-xl text-sm font-medium text-text-secondary hover:text-text hover:bg-bg-card-hover hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.97] transition-all duration-200"
           >
             <Download className="h-4 w-4" />
