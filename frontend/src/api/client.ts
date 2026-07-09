@@ -3,6 +3,8 @@ import type { AxiosError } from "axios";
 
 const AUTH_EVENT = "auth:unauthorized";
 
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
+
 let accessToken: string | null = null;
 
 export function setAccessToken(token: string | null) {
@@ -14,7 +16,7 @@ export function getAccessToken(): string | null {
 }
 
 const client = axios.create({
-  baseURL: "/api",
+  baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
@@ -64,7 +66,7 @@ client.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          "/api/auth/refresh",
+          `${API_BASE}/auth/refresh`,
           {},
           { withCredentials: true }
         );
