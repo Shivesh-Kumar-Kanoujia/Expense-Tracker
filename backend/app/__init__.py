@@ -71,9 +71,18 @@ def create_app(config_class: type = Config) -> Flask:
 
     CORS(app,
          supports_credentials=True,
-         origins=[app.config["FRONTEND_URL"]] if app.config["FRONTEND_URL"] else None,
+         origins=[
+             "http://localhost:5173",
+             "http://localhost:5000",
+             "https://expense-tracker-livid-theta-48.vercel.app",
+             "https://expense-tracker-noir9.vercel.app",
+         ],
          methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
          allow_headers=["Content-Type", "Authorization"])
+
+    logger.info("cors_configured",
+                secure_cookie=app.config.get("SECURE_COOKIE"),
+                frontend_url=app.config.get("FRONTEND_URL"))
 
     db.init_app(app)
     migrate.init_app(app, db)
