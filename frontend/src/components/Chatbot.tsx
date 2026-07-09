@@ -122,7 +122,7 @@ export default function Chatbot() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-text">Expense Assistant</p>
-                  <p className="text-xs text-text-secondary">Mixtral • Groq</p>
+                  <p className="text-xs text-text-secondary">Llama • Groq</p>
                 </div>
               </div>
               <button
