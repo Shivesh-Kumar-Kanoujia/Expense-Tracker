@@ -11,6 +11,12 @@ class Config:
         "sqlite:///" + os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "instance", "app.db"),
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_size": 5,
+        "max_overflow": 5,
+        "pool_recycle": 300,
+    }
     JWT_SECRET = os.getenv("JWT_SECRET", SECRET_KEY)
     JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", "900"))
     JWT_REFRESH_TOKEN_EXPIRES = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES", str(7 * 24 * 3600)))
