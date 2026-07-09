@@ -19,22 +19,10 @@ services:
         generateValue: true
       - key: FLASK_ENV
         value: production
-
-  - type: web
-    name: expense-tracker-ui
-    runtime: static
-    repo: https://github.com/yourusername/expense-tracker
-    plan: starter
-    region: oregon
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: expense-tracker-api
-          property: host
+      - key: SECURE_COOKIE
+        value: "true"
+      - key: FRONTEND_URL
+        value: https://your-app.vercel.app
 
 databases:
   - name: expense-tracker-db
