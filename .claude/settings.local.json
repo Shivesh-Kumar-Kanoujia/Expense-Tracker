@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python -c \"from models import ExpenseTracker; t = ExpenseTracker\\('data/expenses.csv'\\); print\\(t.get_all_expenses\\(\\)\\)\")"
-    ]
-  }
-}
