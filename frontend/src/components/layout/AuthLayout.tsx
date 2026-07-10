@@ -1,5 +1,4 @@
 import { Outlet } from "react-router-dom";
-import { PiggyBank } from "lucide-react";
 
 export function AuthLayout() {
   return (
@@ -12,8 +11,8 @@ export function AuthLayout() {
       </div>
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-accent/10 mb-4">
-            <PiggyBank className="h-7 w-7 text-accent" />
+          <div className="inline-flex items-center justify-center h-14 w-14 mb-4">
+            <video src="/logo-animated.mp4" autoPlay loop muted playsInline className="h-14 w-14" />
           </div>
           <h1 className="text-2xl font-bold text-text tracking-tight">Expense Tracker</h1>
           <p className="text-text-secondary mt-1">Manage your finances with ease</p>

@@ -7,7 +7,6 @@ import {
   ListOrdered,
   X,
   Menu,
-  PiggyBank,
   BarChart3,
   Settings,
   Receipt,
@@ -75,7 +74,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
         aria-label="Sidebar navigation"
       >
         <div className="flex items-center h-header px-4 border-b border-border gap-3 flex-shrink-0">
-          <PiggyBank className="h-6 w-6 text-accent flex-shrink-0" />
+          <video src="/logo-animated.mp4" autoPlay loop muted playsInline className="h-7 w-7 flex-shrink-0 rounded-lg" />
           {!collapsed && (
             <span className="font-bold text-text text-lg tracking-tight truncate">
               Expense Tracker
