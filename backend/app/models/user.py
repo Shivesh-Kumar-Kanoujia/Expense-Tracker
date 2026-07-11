@@ -1,10 +1,11 @@
 import hashlib
 import secrets
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from app.extensions import db
 
 
@@ -17,7 +18,7 @@ class User(UserMixin, db.Model):
     name: str = db.Column(db.String(100), nullable=False)
     email_verified: bool = db.Column(db.Boolean, default=False)
     role: str = db.Column(db.String(20), default="user")
-    created_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC))
 
     expenses = db.relationship("Expense", backref="user", lazy="dynamic", cascade="all, delete-orphan")
     refresh_tokens = db.relationship("RefreshToken", backref="user", lazy="dynamic", cascade="all, delete-orphan")
@@ -45,11 +46,11 @@ class RefreshToken(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
     user_id: int = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     token_hash: str = db.Column(db.String(255), nullable=False)
-    device_info: Optional[str] = db.Column(db.String(255), nullable=True)
-    ip_address: Optional[str] = db.Column(db.String(45), nullable=True)
+    device_info: str | None = db.Column(db.String(255), nullable=True)
+    ip_address: str | None = db.Column(db.String(45), nullable=True)
     expires_at: datetime = db.Column(db.DateTime, nullable=False)
-    created_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    revoked_at: Optional[datetime] = db.Column(db.DateTime, nullable=True)
+    created_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC))
+    revoked_at: datetime | None = db.Column(db.DateTime, nullable=True)
 
     @staticmethod
     def generate_token() -> str:

@@ -1,16 +1,16 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import structlog
-from flask import Blueprint, request, jsonify
-from flask_login import login_required, current_user
+from flask import Blueprint, jsonify, request
+from flask_login import current_user, login_required
 from groq import Groq
 
-from app.extensions import db
 from app.config import Config
-from app.models.expense import Expense
+from app.extensions import db
 from app.models.category import Category
+from app.models.expense import Expense
 
 chat_bp = Blueprint("chat", __name__)
 logger = structlog.get_logger(__name__)
@@ -21,7 +21,7 @@ SYSTEM_PROMPT = (
     "When the user asks you to do something, use the appropriate tool. "
     "Always confirm what you've done in a friendly way.\n"
     "For dates, use YYYY-MM-DD format. "
-    "Today's date is " + datetime.now(timezone.utc).strftime("%Y-%m-%d") + ".\n"
+    "Today's date is " + datetime.now(UTC).strftime("%Y-%m-%d") + ".\n"
     "When listing expenses, format them nicely with date, category, amount, and description."
 )
 
@@ -181,8 +181,8 @@ def execute_tool(name: str, args: dict) -> dict:
         return {"message": "Category deleted successfully"}
 
     if name == "get_summary":
-        month = args.get("month", datetime.now(timezone.utc).month)
-        year = args.get("year", datetime.now(timezone.utc).year)
+        month = args.get("month", datetime.now(UTC).month)
+        year = args.get("year", datetime.now(UTC).year)
         stmt = db.select(Expense).filter(
             Expense.user_id == current_user.id,
             db.extract("month", Expense.date) == month,

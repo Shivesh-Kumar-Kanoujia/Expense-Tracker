@@ -1,0 +1,13 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rounded border -->
+  <rect x="1" y="1" width="118" height="118" rx="16" stroke="#111111" stroke-width="2" />
+  <!-- Graph bars -->
+  <rect x="30" y="70" width="12" height="30" fill="#111111" />
+  <rect x="54" y="55" width="12" height="45" fill="#111111" />
+  <rect x="78" y="40" width="12" height="60" fill="#111111" />
+  <!-- Trend line -->
+  <path d="M30 70 L54 55 L78 40" stroke="#D4AF37" stroke-width="4" fill="none" stroke-linecap="round" />
+  <!-- Coin -->
+  <circle cx="96" cy="30" r="10" fill="#D4AF37" />
+  <!-- Text placeholder (will be overlaid by React) -->
+</svg>

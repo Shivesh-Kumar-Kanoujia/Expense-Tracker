@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getExpenses, createExpense, updateExpense, deleteExpense, type ExpenseParams } from "@/api/expenses";
 
-export function useExpenses(params: ExpenseParams) {
+export function useExpenses(params: ExpenseParams, opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["expenses", params],
     queryFn: () => getExpenses(params),
+    enabled: opts?.enabled,
   });
 }
 

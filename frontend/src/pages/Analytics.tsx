@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useMonthlyTrends, useTopCategories } from "@/hooks/useAnalytics";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
@@ -27,8 +28,10 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 
 export default function Analytics() {
   const isDark = useIsDark();
-  const { data: trends, isLoading: loadingTrends, isError: trendsError } = useMonthlyTrends();
-  const { data: topCategories, isLoading: loadingCategories, isError: catsError } = useTopCategories();
+  const { authResolved, user } = useAuth();
+  const canFetch = authResolved && !!user;
+  const { data: trends, isLoading: loadingTrends, isError: trendsError } = useMonthlyTrends({ enabled: canFetch });
+  const { data: topCategories, isLoading: loadingCategories, isError: catsError } = useTopCategories({ enabled: canFetch });
 
   const error = trendsError || catsError ? "Failed to load some analytics data" : "";
 

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.extensions import db
@@ -16,8 +16,8 @@ class Budget(db.Model):
     amount: float = db.Column(db.Numeric(12, 2), nullable=False)
     month: int = db.Column(db.Integer, nullable=False)
     year: int = db.Column(db.Integer, nullable=False)
-    created_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC))
+    updated_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, Any]:
         return {

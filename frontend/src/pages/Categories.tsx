@@ -16,6 +16,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useAuth } from "@/context/AuthContext";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useReorderCategories } from "@/hooks/useCategories";
 import type { Category } from "@/types";
 import { useToast } from "@/components/ui/Toast";
@@ -204,7 +205,9 @@ function SortableRow({
 
 export default function Categories() {
   const { showToast } = useToast();
-  const { data: catList, isLoading, isError, error, refetch } = useCategories();
+  const { authResolved, user } = useAuth();
+  const canFetch = authResolved && !!user;
+  const { data: catList, isLoading, isError, error, refetch } = useCategories({ enabled: canFetch });
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();

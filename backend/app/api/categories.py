@@ -1,10 +1,11 @@
 from typing import Any
 
-from flask import Blueprint, request, jsonify
-from flask_login import login_required, current_user
+from flask import Blueprint, jsonify, request
+from flask_login import current_user, login_required
 from marshmallow import ValidationError
+
 from app.extensions import db
-from app.models.category import Category, DEFAULT_CATEGORIES
+from app.models.category import DEFAULT_CATEGORIES, Category
 from app.schemas.category import CategorySchema, CategoryUpdateSchema
 
 categories_bp = Blueprint("categories", __name__)

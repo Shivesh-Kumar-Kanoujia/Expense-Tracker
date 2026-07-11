@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { useExpenses, useUpdateExpense, useDeleteExpense } from "@/hooks/useExpenses";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -13,10 +14,12 @@ export default function EditExpense() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { authResolved, user } = useAuth();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
 
-  const { data, isLoading, isError } = useExpenses({ per_page: 100 });
+  const canFetch = authResolved && !!user;
+  const { data, isLoading, isError } = useExpenses({ per_page: 100 }, { enabled: canFetch });
   const expense = data?.expenses?.find((e) => e.id === Number(id));
 
   if (isLoading) {

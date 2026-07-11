@@ -48,8 +48,8 @@ def test_categories_unauthenticated(client):
 
 def test_categories_isolated_per_user(app):
     from app.api.auth import generate_token
-    from app.models.user import User
     from app.extensions import db as _db
+    from app.models.user import User
 
     # Setup: create users and tokens (inside app context)
     with app.app_context():

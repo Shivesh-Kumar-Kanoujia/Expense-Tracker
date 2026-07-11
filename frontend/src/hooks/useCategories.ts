@@ -2,10 +2,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCategories, createCategory, updateCategory, deleteCategory } from "@/api/categories";
 import client from "@/api/client";
 
-export function useCategories() {
+export function useCategories(opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
+    enabled: opts?.enabled,
   });
 }
 

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useBudgets, useUpsertBudget, useDeleteBudget } from "@/hooks/useBudget";
 import { useCategories } from "@/hooks/useCategories";
 import { useToast } from "@/components/ui/Toast";
@@ -17,12 +18,14 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 export default function Budgets() {
   const { showToast } = useToast();
+  const { authResolved, user } = useAuth();
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
-  const { data: budgets, isLoading } = useBudgets({ month: selectedMonth, year: selectedYear });
-  const { data: categoryList } = useCategories();
+  const canFetch = authResolved && !!user;
+  const { data: budgets, isLoading } = useBudgets({ month: selectedMonth, year: selectedYear }, { enabled: canFetch });
+  const { data: categoryList } = useCategories({ enabled: canFetch });
   const upsertBudget = useUpsertBudget();
   const deleteBudget = useDeleteBudget();
 

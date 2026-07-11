@@ -74,7 +74,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
         aria-label="Sidebar navigation"
       >
         <div className="flex items-center h-header px-4 border-b border-border gap-3 flex-shrink-0">
-          <video src="/logo-animated.mp4" autoPlay loop muted playsInline className="h-7 w-7 flex-shrink-0 rounded-lg" />
+          <motion.img layoutId="app-logo" src="/logo-Expense2.png" alt="Expense Tracker" transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="h-7 w-7 flex-shrink-0 object-contain" />
           {!collapsed && (
             <span className="font-bold text-text text-lg tracking-tight truncate">
               Expense Tracker

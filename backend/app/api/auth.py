@@ -1,16 +1,17 @@
-from datetime import datetime, timezone, timedelta
-from typing import Any, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import jwt
-from flask import Blueprint, request, jsonify, current_app
-from flask_login import logout_user, login_required, current_user
+from flask import Blueprint, current_app, jsonify, request
+from flask_login import current_user, login_required, logout_user
 from marshmallow import ValidationError
+
 from app.extensions import db
-from app.models.user import User, RefreshToken
-from app.schemas.auth import RegisterSchema, LoginSchema
-from app.utils.rate_limiter import rate_limit
-from app.utils.login_rate_limiter import login_rate_limit, record_failed_attempt, clear_attempts
+from app.models.user import RefreshToken, User
+from app.schemas.auth import LoginSchema, RegisterSchema
 from app.utils.auth import admin_required
+from app.utils.login_rate_limiter import clear_attempts, login_rate_limit, record_failed_attempt
+from app.utils.rate_limiter import rate_limit
 
 auth_bp = Blueprint("auth", __name__)
 register_schema = RegisterSchema()
@@ -18,7 +19,7 @@ login_schema = LoginSchema()
 
 
 def _generate_access_token(user: User) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "sub": str(user.id),
         "user_id": user.id,
@@ -33,10 +34,10 @@ def _generate_access_token(user: User) -> str:
     return jwt.encode(payload, current_app.config["JWT_SECRET"], algorithm="HS256")
 
 
-def _generate_refresh_token(user: User, device_info: Optional[str] = None, ip_address: Optional[str] = None) -> str:
+def _generate_refresh_token(user: User, device_info: str | None = None, ip_address: str | None = None) -> str:
     raw = RefreshToken.generate_token()
     hashed = RefreshToken.hash_token(raw)
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=current_app.config["JWT_REFRESH_TOKEN_EXPIRES"])
+    expires_at = datetime.now(UTC) + timedelta(seconds=current_app.config["JWT_REFRESH_TOKEN_EXPIRES"])
 
     db.session.add(RefreshToken(
         user_id=user.id,
@@ -67,7 +68,7 @@ def _clear_refresh_cookie(response: Any) -> None:
                         samesite="None", max_age=0, path="/")
 
 
-def _build_auth_response(user: User, refresh_raw: Optional[str] = None) -> tuple:
+def _build_auth_response(user: User, refresh_raw: str | None = None) -> tuple:
     access_token = _generate_access_token(user)
     data = {
         "user": user.to_dict(),
@@ -81,17 +82,17 @@ def _build_auth_response(user: User, refresh_raw: Optional[str] = None) -> tuple
     return response, 200
 
 
-def _read_refresh_token_from_request() -> Optional[str]:
+def _read_refresh_token_from_request() -> str | None:
     return request.cookies.get("refresh_token")
 
 
-def _validate_refresh_token(raw: str) -> Optional[RefreshToken]:
+def _validate_refresh_token(raw: str) -> RefreshToken | None:
     hashed = RefreshToken.hash_token(raw)
     token = db.session.execute(
         db.select(RefreshToken).filter(
             RefreshToken.token_hash == hashed,
             RefreshToken.revoked_at.is_(None),
-            RefreshToken.expires_at > datetime.now(timezone.utc),
+            RefreshToken.expires_at > datetime.now(UTC),
         )
     ).scalar()
     return token
@@ -113,7 +114,7 @@ def register() -> tuple:
     db.session.add(user)
     db.session.commit()
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     verify_token = jwt.encode(
         {
             "sub": str(user.id),
@@ -173,7 +174,7 @@ def refresh() -> tuple:
     if not user:
         return jsonify({"error": "User not found"}), 401
 
-    token_record.revoked_at = datetime.now(timezone.utc)
+    token_record.revoked_at = datetime.now(UTC)
 
     new_refresh_raw = _generate_refresh_token(
         user,
@@ -203,7 +204,7 @@ def logout() -> tuple:
             db.select(RefreshToken).filter(RefreshToken.token_hash == hashed)
         ).scalar()
         if token_record:
-            token_record.revoked_at = datetime.now(timezone.utc)
+            token_record.revoked_at = datetime.now(UTC)
             db.session.commit()
 
     logout_user()
@@ -230,7 +231,7 @@ def forgot_password() -> tuple:
     if not user:
         return jsonify({"message": "If the email exists, a reset link has been sent."}), 200
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     token = jwt.encode(
         {
             "sub": str(user.id),
@@ -328,7 +329,7 @@ def resend_verification() -> tuple:
     if current_user.email_verified:
         return jsonify({"message": "Email already verified."}), 200
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     token = jwt.encode(
         {
             "sub": str(current_user.id),
@@ -386,7 +387,7 @@ def revoke_session(session_id: int) -> tuple:
     if not token_record:
         return jsonify({"error": "Session not found"}), 404
 
-    token_record.revoked_at = datetime.now(timezone.utc)
+    token_record.revoked_at = datetime.now(UTC)
     db.session.commit()
     return jsonify({"message": "Session revoked"}), 200
 
@@ -402,7 +403,7 @@ def admin_list_users() -> tuple:
 @auth_bp.route("/sessions/others", methods=["DELETE"])
 @login_required
 def revoke_other_sessions() -> tuple:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     raw = _read_refresh_token_from_request()
     current_hashed = RefreshToken.hash_token(raw) if raw else None
 

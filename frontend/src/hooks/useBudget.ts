@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getBudgets, upsertBudget, deleteBudget, type BudgetParams } from "@/api/budgets";
 
-export function useBudgets(params?: BudgetParams) {
+export function useBudgets(params?: BudgetParams, opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["budgets", params],
     queryFn: () => getBudgets(params),
+    enabled: opts?.enabled,
   });
 }
 

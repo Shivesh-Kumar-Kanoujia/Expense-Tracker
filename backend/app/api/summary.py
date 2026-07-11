@@ -1,8 +1,9 @@
 from typing import Any
 
-from sqlalchemy import func, select
 from flask import Blueprint, jsonify
-from flask_login import login_required, current_user
+from flask_login import current_user, login_required
+from sqlalchemy import func, select
+
 from app.extensions import db
 from app.models.expense import Expense
 

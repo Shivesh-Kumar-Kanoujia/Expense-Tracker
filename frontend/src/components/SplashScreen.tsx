@@ -1,0 +1,155 @@
+import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+
+const DURATION = 1.2;
+
+function useReducedMotion() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+export default function SplashScreen({ onComplete }: { onComplete: () => void }) {
+  const [fadeOut, setFadeOut] = useState(false);
+  const reduced = useReducedMotion();
+
+  const finish = useCallback(() => {
+    setFadeOut(true);
+    setTimeout(onComplete, 350);
+  }, [onComplete]);
+
+  useEffect(() => {
+    if (reduced) {
+      onComplete();
+      return;
+    }
+    const timer = setTimeout(finish, DURATION * 1000);
+    return () => clearTimeout(timer);
+  }, [reduced, finish]);
+
+  if (reduced) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.35, ease: "easeInOut" } }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-bg"
+    >
+      <motion.div
+        className="relative w-48 h-48 md:w-64 md:h-64"
+        initial={{ opacity: 0 }}
+        animate={fadeOut ? { opacity: 0.3 } : { opacity: 1 }}
+        transition={{ duration: 0.35 }}
+      >
+        <svg
+          viewBox="0 0 192 192"
+          className="absolute inset-0 w-full h-full"
+          fill="none"
+          aria-hidden="true"
+        >
+          <motion.rect
+            x="2"
+            y="2"
+            width="188"
+            height="188"
+            rx="16"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="text-accent"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+          />
+
+          <g className="text-accent" transform="translate(48, 146)">
+            <motion.rect
+              x="0"
+              y={-18}
+              width="14"
+              height="18"
+              rx="3"
+              fill="currentColor"
+              opacity="0.55"
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{ delay: 0.2, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformOrigin: "50% 100%" }}
+            />
+            <motion.rect
+              x="22"
+              y={-28}
+              width="14"
+              height="28"
+              rx="3"
+              fill="currentColor"
+              opacity="0.75"
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{ delay: 0.28, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformOrigin: "50% 100%" }}
+            />
+            <motion.rect
+              x="44"
+              y={-38}
+              width="14"
+              height="38"
+              rx="3"
+              fill="currentColor"
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{ delay: 0.36, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformOrigin: "50% 100%" }}
+            />
+          </g>
+
+          <motion.path
+            d="M 54 130 L 72 118 L 84 124 L 100 108 L 114 114 L 130 102"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-accent"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.45 }}
+          />
+
+          <motion.g
+            className="text-accent"
+            initial={{ y: -20, opacity: 0, scale: 0.6 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 220,
+              damping: 14,
+              delay: 0.65,
+            }}
+          >
+            <circle cx="142" cy="94" r="8" fill="currentColor" />
+            <text
+              x="142"
+              y="97"
+              textAnchor="middle"
+              fill="white"
+              fontSize="11"
+              fontWeight="700"
+              fontFamily="system-ui"
+            >
+              $
+            </text>
+          </motion.g>
+        </svg>
+
+        <motion.img
+          layoutId="app-logo"
+          src="/logo-Expense2.png"
+          alt="Expense Tracker"
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 md:w-32 md:h-32 object-contain pointer-events-none"
+          style={{ willChange: "transform" }}
+        />
+      </motion.div>
+    </motion.div>
+  );
+}

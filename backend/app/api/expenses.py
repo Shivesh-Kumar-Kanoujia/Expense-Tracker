@@ -1,9 +1,10 @@
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
-from flask import Blueprint, request, jsonify
-from flask_login import login_required, current_user
+from flask import Blueprint, jsonify, request
+from flask_login import current_user, login_required
 from marshmallow import ValidationError
+
 from app.extensions import db
 from app.models.expense import Expense
 from app.schemas.expense import ExpenseSchema, ExpenseUpdateSchema
@@ -17,7 +18,7 @@ def parse_date(value: str, label: str) -> Any | None:
     try:
         return datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError:
-        raise ValueError(f"Invalid {label}: '{value}'. Use YYYY-MM-DD.")
+        raise ValueError(f"Invalid {label}: '{value}'. Use YYYY-MM-DD.") from None
 
 
 @expenses_bp.route("", methods=["GET"])
@@ -27,12 +28,12 @@ def list_expenses() -> tuple:
     per_page = request.args.get("per_page", 20, type=int)
     per_page = min(per_page, 100)
 
-    category: Optional[str] = request.args.get("category")
-    date_from: Optional[str] = request.args.get("date_from")
-    date_to: Optional[str] = request.args.get("date_to")
-    search: Optional[str] = request.args.get("search", "").strip()
-    amount_min: Optional[str] = request.args.get("amount_min")
-    amount_max: Optional[str] = request.args.get("amount_max")
+    category: str | None = request.args.get("category")
+    date_from: str | None = request.args.get("date_from")
+    date_to: str | None = request.args.get("date_to")
+    search: str | None = request.args.get("search", "").strip()
+    amount_min: str | None = request.args.get("amount_min")
+    amount_max: str | None = request.args.get("amount_max")
 
     query = db.select(Expense).filter_by(user_id=current_user.id)
 
@@ -121,7 +122,7 @@ def update_expense(expense_id: int) -> tuple:
     if "description" in data:
         expense.description = data["description"]
 
-    expense.updated_at = datetime.now(timezone.utc)
+    expense.updated_at = datetime.now(UTC)
     db.session.commit()
 
     return jsonify({"expense": expense.to_dict()})

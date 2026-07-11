@@ -46,7 +46,7 @@ function getGreeting() {
 export default function Dashboard() {
   const isDark = useIsDark();
   const { showToast } = useToast();
-  const { user } = useAuth();
+  const { user, authResolved } = useAuth();
   const navigate = useNavigate();
 
   const [page, setPage] = useState(1);
@@ -64,19 +64,21 @@ export default function Dashboard() {
     date_to: dateTo || undefined,
   };
 
-  const { data: summary, isLoading: loadingSummary } = useSummary(filterParams);
-  const { data: trends, isLoading: loadingTrends } = useMonthlyTrends();
+  const canFetch = authResolved && !!user;
+
+  const { data: summary, isLoading: loadingSummary } = useSummary(filterParams, { enabled: canFetch });
+  const { data: trends, isLoading: loadingTrends } = useMonthlyTrends({ enabled: canFetch });
   const { data: expensesData, isLoading: loadingExpenses } = useExpenses({
     page,
     per_page: perPage,
     ...filterParams,
     search: search || undefined,
-  });
-  const { data: categoryList } = useCategories();
+  }, { enabled: canFetch });
+  const { data: categoryList } = useCategories({ enabled: canFetch });
   const { data: budgetList } = useBudgets({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
-  });
+  }, { enabled: canFetch });
   const deleteExpense = useDeleteExpense();
 
   const categories = (categoryList ?? []).map((c: Category) => c.name);

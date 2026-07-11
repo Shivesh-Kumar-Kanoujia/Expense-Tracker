@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 from app.extensions import db
 
@@ -13,13 +13,13 @@ class Expense(db.Model):
     date: datetime = db.Column(db.Date, nullable=False)
     category: str = db.Column(db.String(50), nullable=False)
     amount: Decimal = db.Column(db.Numeric(12, 2), nullable=False)
-    description: Optional[str] = db.Column(db.String(255), nullable=True)
-    created_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    description: str | None = db.Column(db.String(255), nullable=True)
+    created_at: datetime = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC))
     updated_at: datetime = db.Column(
         db.DateTime,
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     def to_dict(self) -> dict[str, Any]:

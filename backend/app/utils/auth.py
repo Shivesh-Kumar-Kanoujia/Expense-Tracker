@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
 
 from flask import jsonify
 from flask_login import current_user

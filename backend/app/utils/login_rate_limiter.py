@@ -1,8 +1,9 @@
 import time
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
 
-from flask import request, jsonify, current_app
+from flask import current_app, jsonify, request
 
 _attempts: dict[str, list[float]] = {}
 MAX_ATTEMPTS = 5

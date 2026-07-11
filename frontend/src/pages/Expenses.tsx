@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { useExpenses, useCreateExpense, useDeleteExpense } from "@/hooks/useExpenses";
 import { useCategories } from "@/hooks/useCategories";
 import { type ExpenseParams } from "@/api/expenses";
@@ -35,7 +36,10 @@ const CATEGORY_VARIANTS: Record<string, "default" | "success" | "warning" | "dan
 
 export default function Expenses() {
   const { showToast } = useToast();
+  const { authResolved, user } = useAuth();
   const navigate = useNavigate();
+
+  const canFetch = authResolved && !!user;
 
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(12);
@@ -54,8 +58,8 @@ export default function Expenses() {
     search: search || undefined,
   };
 
-  const { data, isLoading, isError, error } = useExpenses(params);
-  const { data: categoryList } = useCategories();
+  const { data, isLoading, isError, error } = useExpenses(params, { enabled: canFetch });
+  const { data: categoryList } = useCategories({ enabled: canFetch });
   const createExpense = useCreateExpense();
   const deleteExpense = useDeleteExpense();
 

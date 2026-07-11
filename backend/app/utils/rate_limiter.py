@@ -1,8 +1,9 @@
 import time
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
 
-from flask import request, jsonify
+from flask import jsonify, request
 
 _limits: dict[str, list[float]] = {}
 

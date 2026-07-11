@@ -3,15 +3,15 @@ import time
 from typing import Any
 
 import jwt
+import sqlalchemy as sa
 import structlog
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from sentry_sdk.integrations.flask import FlaskIntegration
-import sqlalchemy as sa
 from sqlalchemy import text
 
 from app.config import Config
-from app.extensions import db, migrate, login_manager
+from app.extensions import db, login_manager, migrate
 
 
 def setup_logging(log_level: str = "INFO") -> None:
@@ -92,10 +92,10 @@ def create_app(config_class: type = Config) -> Flask:
     def unauthorized() -> tuple:
         return jsonify({"error": "Authentication required"}), 401
 
-    from app.models.user import User, RefreshToken
-    from app.models.expense import Expense
-    from app.models.category import Category
     from app.models.budget import Budget
+    from app.models.category import Category
+    from app.models.expense import Expense
+    from app.models.user import RefreshToken, User
 
     with app.app_context():
         try:
@@ -139,13 +139,13 @@ def create_app(config_class: type = Config) -> Flask:
                 return None
         return None
 
+    from app.api.analytics import analytics_bp
     from app.api.auth import auth_bp
+    from app.api.budgets import budgets_bp
+    from app.api.categories import categories_bp
+    from app.api.chat import chat_bp
     from app.api.expenses import expenses_bp
     from app.api.summary import summary_bp
-    from app.api.categories import categories_bp
-    from app.api.analytics import analytics_bp
-    from app.api.budgets import budgets_bp
-    from app.api.chat import chat_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(expenses_bp, url_prefix="/api/expenses")
@@ -162,7 +162,7 @@ def create_app(config_class: type = Config) -> Flask:
         try:
             db.session.execute(text("SELECT 1"))
             status["database"] = "connected"
-        except Exception as exc:
+        except Exception:
             logger.exception("health_db_failure")
             status["database"] = "disconnected"
             status["status"] = "degraded"
