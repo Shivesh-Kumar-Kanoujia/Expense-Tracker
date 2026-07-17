@@ -1,14 +1,16 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { useMonthlyTrends, useTopCategories } from "@/hooks/useAnalytics";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, chartColors } from "@/lib/utils";
 import { CATEGORY_COLORS } from "@/lib/constants";
-import { ArrowLeft, TrendingUp, DollarSign, PieChart, Download, RefreshCw, AlertTriangle, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Download, RefreshCw, AlertTriangle, PieChart, Award } from "lucide-react";
 import { Bar, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -26,6 +28,31 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Le
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+const easeOutExpo = [0.16, 1, 0.3, 1] as const;
+
+const staggerContainer = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.05, delayChildren: 0.1 },
+  },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: easeOutExpo } },
+};
+
+type RangeKey = "3M" | "6M" | "1Y" | "all";
+
+const RANGE_OPTIONS: RangeKey[] = ["3M", "6M", "1Y", "all"];
+
+function filterTrends(trends: { year: number; month: number; total: number; count: number }[], range: RangeKey) {
+  if (range === "all") return trends;
+  const monthsMap: Partial<Record<RangeKey, number>> = { "3M": 3, "6M": 6, "1Y": 12 };
+  const count = monthsMap[range] ?? trends.length;
+  return trends.slice(-count);
+}
+
 export default function Analytics() {
   const isDark = useIsDark();
   const { authResolved, user } = useAuth();
@@ -33,17 +60,20 @@ export default function Analytics() {
   const { data: trends, isLoading: loadingTrends, isError: trendsError } = useMonthlyTrends({ enabled: canFetch });
   const { data: topCategories, isLoading: loadingCategories, isError: catsError } = useTopCategories({ enabled: canFetch });
 
-  const error = trendsError || catsError ? "Failed to load some analytics data" : "";
+  const [range, setRange] = useState<RangeKey>("6M");
 
+  const error = trendsError || catsError ? "Failed to load some analytics data" : "";
   const colors = chartColors();
 
-  const barChartLabels = (trends ?? []).map((t) => `${MONTH_NAMES[t.month - 1]} ${t.year}`);
+  const filteredTrends = useMemo(() => filterTrends(trends ?? [], range), [trends, range]);
+
+  const barChartLabels = filteredTrends.map((t) => `${MONTH_NAMES[t.month - 1]} ${t.year}`);
   const barChartData = {
     labels: barChartLabels,
     datasets: [
       {
         label: "Spending",
-        data: (trends ?? []).map((t) => t.total),
+        data: filteredTrends.map((t) => t.total),
         backgroundColor: "rgba(212, 175, 55, 0.7)",
         borderColor: "#D4AF37",
         borderWidth: 1,
@@ -132,24 +162,36 @@ export default function Analytics() {
     },
   };
 
-  const monthlyTotal = (trends ?? []).reduce((s, t) => s + t.total, 0);
-  const monthlyAvg = (trends ?? []).length > 0 ? monthlyTotal / (trends ?? []).length : 0;
+  const monthlyTotal = filteredTrends.reduce((s, t) => s + t.total, 0);
+  const monthlyAvg = filteredTrends.length > 0 ? monthlyTotal / filteredTrends.length : 0;
   const topCat = (topCategories ?? [])[0];
 
   const trendsInsight = useMemo(() => {
-    if (!trends || trends.length < 2) return null;
-    const sorted = [...trends].sort((a, b) => b.total - a.total);
+    if (!filteredTrends || filteredTrends.length < 2) return null;
+    const sorted = [...filteredTrends].sort((a, b) => b.total - a.total);
     const highest = sorted[0];
     const lowest = sorted[sorted.length - 1];
     return {
       highest: `${MONTH_NAMES[highest.month - 1]} ${highest.year}`,
       highestAmount: highest.total,
       lowest: `${MONTH_NAMES[lowest.month - 1]} ${lowest.year}`,
-      change: trends.length >= 2
-        ? ((trends[trends.length - 1].total - trends[0].total) / trends[0].total * 100).toFixed(1)
+      change: filteredTrends.length >= 2
+        ? ((filteredTrends[filteredTrends.length - 1].total - filteredTrends[0].total) / filteredTrends[0].total * 100).toFixed(1)
         : null,
     };
-  }, [trends]);
+  }, [filteredTrends]);
+
+  const totalTrend = useMemo(() => {
+    if (!filteredTrends || filteredTrends.length < 2) return undefined;
+    const first = filteredTrends[0].total;
+    const last = filteredTrends[filteredTrends.length - 1].total;
+    if (first === 0) return undefined;
+    const pct = ((last - first) / first * 100).toFixed(1);
+    return {
+      direction: (last >= first ? "up" : "down") as "up" | "down",
+      value: `${pct}% vs first month`,
+    };
+  }, [filteredTrends]);
 
   const showErrorCard = error && !loadingTrends && !loadingCategories;
   const noData = (!loadingTrends && (!trends || trends.length === 0)) && (!loadingCategories && (!topCategories || topCategories.length === 0));
@@ -170,269 +212,256 @@ export default function Analytics() {
   }
 
   return (
-    <div className="space-y-8">
+    <motion.div
+      className="space-y-8"
+      variants={staggerContainer}
+      initial="hidden"
+      animate="show"
+    >
       {error && (
-        <Card className="border-warning/50 bg-warning/5">
-          <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0" />
-            <p className="text-sm text-text-secondary flex-1">{error}</p>
-            <Button size="sm" variant="ghost" icon={<RefreshCw className="h-3.5 w-3.5" />}>
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
+        <motion.div variants={staggerItem}>
+          <Card className="border-warning/50 bg-warning/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0" />
+              <p className="text-sm text-text-secondary flex-1">{error}</p>
+              <Button size="sm" variant="ghost" icon={<RefreshCw className="h-3.5 w-3.5" />}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
-      <PageHeader
-        title="Analytics"
-        description="Analyze your spending patterns"
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              icon={<Download className="h-4 w-4" />}
-              onClick={() => {
-                const csv = [
-                  ["Month", "Amount"].join(","),
-                  ...(trends ?? []).map((t) => [`${MONTH_NAMES[t.month - 1]} ${t.year}`, t.total].join(",")),
-                ].join("\n");
-                const blob = new Blob([csv], { type: "text/csv" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "expense-report.csv";
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-              disabled={!trends || trends.length === 0}
-            >
-              Export Report
-            </Button>
-          </div>
-        }
-      />
+      <motion.div variants={staggerItem}>
+        <PageHeader
+          title="Analytics"
+          description="Analyze your spending patterns"
+          actions={
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                icon={<Download className="h-4 w-4" />}
+                onClick={() => {
+                  const csv = [
+                    ["Month", "Amount"].join(","),
+                    ...(trends ?? []).map((t) => [`${MONTH_NAMES[t.month - 1]} ${t.year}`, t.total].join(",")),
+                  ].join("\n");
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "expense-report.csv";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                disabled={!trends || trends.length === 0}
+              >
+                Export Report
+              </Button>
+            </div>
+          }
+        />
+      </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <Card className="hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-accent-light/20 text-accent">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-text-secondary">Total Spent</p>
-                {loadingTrends ? (
-                  <Skeleton variant="text" width="100px" height="28px" />
-                ) : (
-                  <p className="text-xl font-bold text-text">{formatCurrency(monthlyTotal)}</p>
-                )}
-              </div>
-            </div>
-            {!loadingTrends && trends && trends.length > 0 && trendsInsight?.change && (
-              <div className="mt-3 pt-3 border-t border-border">
-                <span className={`text-xs font-medium ${Number(trendsInsight.change) >= 0 ? "text-error" : "text-success"}`}>
-                  {Number(trendsInsight.change) >= 0 ? "↑" : "↓"} {Math.abs(Number(trendsInsight.change))}% overall
-                </span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-accent-light/20 text-accent">
-                <DollarSign className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-text-secondary">Monthly Average</p>
-                {loadingTrends ? (
-                  <Skeleton variant="text" width="100px" height="28px" />
-                ) : (
-                  <p className="text-xl font-bold text-text">{formatCurrency(monthlyAvg)}</p>
-                )}
-              </div>
-            </div>
-            {!loadingTrends && trends && trends.length > 0 && (
-              <p className="text-xs text-text-muted mt-1">
-                Across {trends.length} month{trends.length > 1 ? "s" : ""}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-accent-light/20 text-accent">
-                <PieChart className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-text-secondary">Categories Used</p>
-                {loadingCategories ? (
-                  <Skeleton variant="text" width="80px" height="28px" />
-                ) : (
-                  <p className="text-xl font-bold text-text">{(topCategories ?? []).length}</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-accent-light/20 text-accent">
-                <ArrowLeft className="h-5 w-5 rotate-45" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-text-secondary">Top Category</p>
-                {loadingCategories ? (
-                  <Skeleton variant="text" width="100px" height="28px" />
-                ) : topCat ? (
-                  <p className="text-xl font-bold text-text truncate max-w-[140px]">{topCat.category}</p>
-                ) : (
-                  <p className="text-sm text-text-muted">—</p>
-                )}
-              </div>
-            </div>
-            {topCat && (
-              <p className="text-xs text-text-muted mt-1">
-                {topCat.count} transaction{topCat.count > 1 ? "s" : ""} · {topCat.percentage}% of total
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
+        variants={staggerContainer}
+      >
+        <motion.div variants={staggerItem}>
+          {loadingTrends ? (
+            <Card><CardContent className="p-5 space-y-3"><Skeleton variant="text" width="50%" /><Skeleton variant="text" width="70%" height="28px" /></CardContent></Card>
+          ) : (
+            <StatsCard
+              label="Total Spent"
+              value={formatCurrency(monthlyTotal)}
+              subtitle={filteredTrends.length > 0 ? `Across ${filteredTrends.length} months` : undefined}
+              trend={totalTrend}
+              icon={<TrendingUp className="h-5 w-5" />}
+            />
+          )}
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          {loadingTrends ? (
+            <Card><CardContent className="p-5 space-y-3"><Skeleton variant="text" width="50%" /><Skeleton variant="text" width="70%" height="28px" /></CardContent></Card>
+          ) : (
+            <StatsCard
+              label="Monthly Average"
+              value={formatCurrency(monthlyAvg)}
+              subtitle={filteredTrends.length > 0 ? `Over ${filteredTrends.length} months` : undefined}
+              icon={<TrendingDown className="h-5 w-5" />}
+            />
+          )}
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          {loadingCategories ? (
+            <Card><CardContent className="p-5 space-y-3"><Skeleton variant="text" width="50%" /><Skeleton variant="text" width="40%" height="28px" /></CardContent></Card>
+          ) : (
+            <StatsCard
+              label="Categories Used"
+              value={String((topCategories ?? []).length)}
+              subtitle={`${(topCategories ?? []).length} tracked`}
+              icon={<PieChart className="h-5 w-5" />}
+            />
+          )}
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          {loadingCategories ? (
+            <Card><CardContent className="p-5 space-y-3"><Skeleton variant="text" width="50%" /><Skeleton variant="text" width="70%" height="28px" /></CardContent></Card>
+          ) : (
+            <StatsCard
+              label="Top Category"
+              value={topCat ? topCat.category : "—"}
+              subtitle={topCat ? `${topCat.count} txns · ${topCat.percentage}% of total` : undefined}
+              icon={<Award className="h-5 w-5" />}
+            />
+          )}
+        </motion.div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <CardTitle>Monthly Spending Trends</CardTitle>
-                <CardDescription>Your spending over time</CardDescription>
-              </div>
-              {trends && trends.length > 0 && (
-                <div className="flex items-center gap-1 p-0.5 bg-bg-card-hover/50 rounded-lg border border-border w-fit">
-                  {["3M", "6M", "1Y", "All"].map((lbl) => (
-                    <button
-                      key={lbl}
-                      className="px-2.5 py-1 text-xs font-medium rounded-md transition-colors data-[active=true]:bg-text data-[active=true]:text-bg data-[active=true]:shadow-sm text-text-secondary hover:text-text"
-                      data-active={lbl === "6M" ? true : undefined}
-                    >
-                      {lbl}
-                    </button>
-                  ))}
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-5 gap-6"
+        variants={staggerContainer}
+      >
+        <motion.div variants={staggerItem} className="lg:col-span-3">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <CardTitle>Monthly Spending Trends</CardTitle>
+                  <CardDescription>Your spending over time</CardDescription>
                 </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loadingTrends ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Skeleton variant="rectangular" width="100%" height="280px" />
+                {trends && trends.length > 0 && (
+                  <div className="flex items-center gap-1 p-0.5 bg-bg-card-hover/50 rounded-lg border border-border w-fit">
+                    {RANGE_OPTIONS.map((lbl) => (
+                      <button
+                        key={lbl}
+                        onClick={() => setRange(lbl)}
+                        className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                          range === lbl
+                            ? "bg-text text-bg shadow-sm"
+                            : "text-text-secondary hover:text-text"
+                        }`}
+                      >
+                        {lbl === "all" ? "All" : lbl}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : trends && trends.length > 0 ? (
-              <>
-                <div className="h-[300px]" key={isDark ? "bar-dark" : "bar-light"}>
-                  <Bar data={barChartData} options={barOptions} />
+            </CardHeader>
+            <CardContent>
+              {loadingTrends ? (
+                <div className="h-[300px] flex items-center justify-center">
+                  <Skeleton variant="rectangular" width="100%" height="280px" />
                 </div>
-                {trendsInsight && (
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-xs text-text-muted justify-center">
-                    <span>
-                      Highest: <strong className="text-text-secondary">{trendsInsight.highest}</strong> ({formatCurrency(trendsInsight.highestAmount)})
-                    </span>
-                    {trendsInsight.change && (
+              ) : filteredTrends.length > 0 ? (
+                <>
+                  <div className="h-[300px]" key={`${isDark ? "bar-dark" : "bar-light"}-${range}`}>
+                    <Bar data={barChartData} options={barOptions} />
+                  </div>
+                  {trendsInsight && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-xs text-text-muted justify-center">
                       <span>
-                        Overall change: <strong className={Number(trendsInsight.change) >= 0 ? "text-error" : "text-success"}>
-                          {Number(trendsInsight.change) >= 0 ? "+" : ""}{trendsInsight.change}%
-                        </strong>
+                        Highest: <strong className="text-text-secondary">{trendsInsight.highest}</strong> ({formatCurrency(trendsInsight.highestAmount)})
                       </span>
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              <EmptyState
-                illustration="chart"
-                title="No data yet"
-                description="Add expenses to see your monthly trends."
-              />
-            )}
-          </CardContent>
-        </Card>
+                      {trendsInsight.change && (
+                        <span>
+                          Overall change: <strong className={Number(trendsInsight.change) >= 0 ? "text-error" : "text-success"}>
+                            {Number(trendsInsight.change) >= 0 ? "+" : ""}{trendsInsight.change}%
+                          </strong>
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyState
+                  illustration="chart"
+                  title="No data yet"
+                  description="Add expenses to see your monthly trends."
+                />
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Category Breakdown</CardTitle>
-            <CardDescription>Where your money goes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loadingCategories ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Skeleton variant="circular" width="200px" height="200px" />
-              </div>
-            ) : topCategories && topCategories.length > 0 ? (
-              <>
-                <div className="flex justify-center" key={isDark ? "donut-dark" : "donut-light"}>
-                  <div className="w-full max-w-xs">
-                    <Doughnut data={doughnutData} options={doughnutOptions} />
-                  </div>
+        <motion.div variants={staggerItem} className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Category Breakdown</CardTitle>
+              <CardDescription>Where your money goes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingCategories ? (
+                <div className="h-[300px] flex items-center justify-center">
+                  <Skeleton variant="circular" width="200px" height="200px" />
                 </div>
-                {topCat && (
-                  <div className="flex items-center gap-2 justify-center mt-4 text-xs text-text-muted">
-                    <Zap className="h-3.5 w-3.5 text-accent" />
-                    <span>
-                      Biggest category: <strong className="text-text-secondary">{topCat.category}</strong> ({topCat.percentage}% of spending)
-                    </span>
+              ) : topCategories && topCategories.length > 0 ? (
+                <>
+                  <div className="flex justify-center" key={isDark ? "donut-dark" : "donut-light"}>
+                    <div className="w-full max-w-xs">
+                      <Doughnut data={doughnutData} options={doughnutOptions} />
+                    </div>
                   </div>
-                )}
-              </>
-            ) : (
-              <EmptyState
-                illustration="chart"
-                title="No data yet"
-                description="Add expenses to see your category breakdown."
-              />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  {topCat && (
+                    <div className="flex items-center gap-2 justify-center mt-4 text-xs text-text-muted">
+                      <Award className="h-3.5 w-3.5 text-accent" />
+                      <span>
+                        Biggest category: <strong className="text-text-secondary">{topCat.category}</strong> ({topCat.percentage}% of spending)
+                      </span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyState
+                  illustration="chart"
+                  title="No data yet"
+                  description="Add expenses to see your category breakdown."
+                />
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
       {topCategories && topCategories.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Spending Categories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topCategories.map((cat, i) => (
-                <div key={cat.category} className="flex items-center gap-4">
-                  <span className="w-6 text-sm font-semibold text-text-muted">#{i + 1}</span>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-text">{cat.category}</span>
-                      <span className="text-sm text-text-secondary">
-                        {formatCurrency(cat.total)}
-                        <span className="text-text-muted ml-1">({cat.percentage}%)</span>
-                      </span>
+        <motion.div variants={staggerItem}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Spending Categories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <motion.div className="space-y-4" variants={staggerContainer} initial="hidden" animate="show">
+                {topCategories.map((cat, i) => (
+                  <motion.div key={cat.category} variants={staggerItem} className="flex items-center gap-4">
+                    <span className="w-6 text-sm font-semibold text-text-muted">#{i + 1}</span>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-text">{cat.category}</span>
+                        <span className="text-sm text-text-secondary">
+                          {formatCurrency(cat.total)}
+                          <span className="text-text-muted ml-1">({cat.percentage}%)</span>
+                        </span>
+                      </div>
+                      <div className="h-2 bg-bg-card-hover rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${cat.percentage}%`,
+                            backgroundColor: CATEGORY_COLORS[cat.category] || "#D4AF37",
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 bg-bg-card-hover rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${cat.percentage}%`,
-                          backgroundColor: CATEGORY_COLORS[cat.category] || "#D4AF37",
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <span className="text-xs text-text-muted w-16 text-right">
-                    {cat.count} txns
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                    <span className="text-xs text-text-muted w-16 text-right">
+                      {cat.count} txns
+                    </span>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
