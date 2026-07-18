@@ -22,9 +22,14 @@
         }
         if (theme === "dark") {
           document.documentElement.classList.add("dark");
-          document.body.style.background = "#0A0A0A";
+        }
+        function setBodyBg() {
+          document.body.style.background = theme === "dark" ? "#0A0A0A" : "#F5F2F0";
+        }
+        if (document.body) {
+          setBodyBg();
         } else {
-          document.body.style.background = "#F5F2F0";
+          document.addEventListener("DOMContentLoaded", setBodyBg);
         }
       })();
     </script>
