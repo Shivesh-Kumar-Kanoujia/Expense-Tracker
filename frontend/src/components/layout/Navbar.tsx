@@ -194,7 +194,7 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
 
         <button
           onClick={onMenuToggle}
-          className="lg:hidden p-2 -ml-2 rounded-lg text-text-muted hover:text-text hover:bg-bg-card-hover transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="lg:hidden p-3 -ml-2 rounded-lg text-text-muted hover:text-text hover:bg-bg-card-hover transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           aria-label="Toggle navigation menu"
         >
           <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -204,7 +204,7 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
           </svg>
         </button>
 
-        <div className="w-[35%] min-w-[200px] max-w-md mx-2 lg:mx-4">
+        <div className="w-[35%] min-w-[120px] sm:min-w-[200px] max-w-md mx-2 lg:mx-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
             <input
@@ -276,7 +276,7 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
                     setNotifOpen((p) => !p);
                   }}
                   className={cn(
-                    "p-2.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-card-hover transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent relative",
+                    "p-3 rounded-lg text-text-muted hover:text-text hover:bg-bg-card-hover transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent relative",
                     glowClass
                   )}
                   aria-label="Notifications"

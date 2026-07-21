@@ -176,7 +176,7 @@ export function FilterBar({
                 type="button"
                 onClick={() => toggleCategory(cat)}
                 className={cn(
-                  "px-3 py-1 rounded-full text-sm font-medium transition-colors duration-fast",
+                  "px-4 py-2 rounded-full text-sm font-medium transition-colors duration-fast min-h-[44px]",
                   selected
                     ? "bg-accent-light/20 text-accent border border-accent/30"
                     : "bg-bg-card-hover text-text-secondary border border-border hover:border-text-muted"
@@ -197,10 +197,10 @@ export function FilterBar({
               <button
                 type="button"
                 onClick={() => toggleCategory(cat)}
-                className="ml-1 hover:text-text transition-colors"
+                className="ml-1 p-1 hover:text-text transition-colors flex items-center justify-center"
                 aria-label={`Remove ${cat} filter`}
               >
-                <X className="h-3 w-3" />
+                <X className="h-3.5 w-3.5" />
               </button>
             </Badge>
           ))}

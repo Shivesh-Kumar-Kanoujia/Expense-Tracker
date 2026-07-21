@@ -127,7 +127,7 @@ export default function Chatbot() {
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="h-8 w-8 rounded-lg flex items-center justify-center text-text-secondary hover:text-text hover:bg-bg-card-hover transition-colors"
+                className="h-11 w-11 rounded-lg flex items-center justify-center text-text-secondary hover:text-text hover:bg-bg-card-hover transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -172,7 +172,7 @@ export default function Chatbot() {
                   onClick={handleSend}
                   disabled={!input.trim() || loading}
                   className={cn(
-                    "h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
+                    "h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
                     input.trim() && !loading
                       ? "bg-primary text-white hover:bg-primary/90"
                       : "bg-bg-card-hover text-text-muted cursor-not-allowed"

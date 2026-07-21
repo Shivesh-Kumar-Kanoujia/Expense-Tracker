@@ -184,11 +184,11 @@ export default function Budgets() {
               </CardHeader>
               <CardContent>
                 {overallBudget ? (
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <select
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
-                      className="flex-1 bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="flex-1 bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent min-h-[44px]"
                     >
                       <option value="">Select category...</option>
                       {categoryOptions.map((c) => (

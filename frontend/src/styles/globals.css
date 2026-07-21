@@ -55,7 +55,7 @@
   --z-tooltip: 600;
   --container-max: 1200px;
   --header-height: 84px;
-  --sidebar-width: 280px;
+  --sidebar-width: 300px;
   --sidebar-collapsed: 72px;
   --backdrop-blur-glass: 12px;
   --animate-fade-in: fade-in var(--transition-base) ease-out;

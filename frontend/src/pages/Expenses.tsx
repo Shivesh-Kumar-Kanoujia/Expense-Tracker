@@ -217,7 +217,7 @@ export default function Expenses() {
                 {expense.description && (
                   <p className="text-sm text-text-secondary line-clamp-2 mb-3">{expense.description}</p>
                 )}
-                <div className="flex items-center justify-end gap-1 pt-2 border-t border-border opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
+                <div className="flex items-center justify-end gap-1 pt-2 border-t border-border lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-fast">
                   <Link
                     to={`/edit/${expense.id}`}
                     className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-bg-card-hover transition-colors duration-fast"

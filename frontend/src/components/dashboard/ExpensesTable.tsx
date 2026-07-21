@@ -114,7 +114,7 @@ export function ExpensesTable({
       <button 
         onClick={() => onSort(field)} 
         className={cn(
-          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+          "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px]",
           isActive ? "bg-primary/20 text-primary" : "hover:bg-bg-card-hover text-text-secondary"
         )}
       >
@@ -173,7 +173,7 @@ export function ExpensesTable({
                   <Badge variant="warning" size="sm">Large</Badge>
                 )}
               </div>
-              <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                 <Link
                   to={`/edit/${expense.id}`}
                   className="inline-flex items-center justify-center p-2 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors duration-fast"

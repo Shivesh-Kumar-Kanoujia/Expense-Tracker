@@ -335,11 +335,11 @@ export default function Analytics() {
                       <button
                         key={lbl}
                         onClick={() => setRange(lbl)}
-                        className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-                          range === lbl
-                            ? "bg-text text-bg shadow-sm"
-                            : "text-text-secondary hover:text-text"
-                        }`}
+                        className={`px-3 py-2 text-xs font-medium rounded-md transition-colors min-h-[44px] ${
+                           range === lbl
+                             ? "bg-text text-bg shadow-sm"
+                             : "text-text-secondary hover:text-text"
+                         }`}
                       >
                         {lbl === "all" ? "All" : lbl}
                       </button>
