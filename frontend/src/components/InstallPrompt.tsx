@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, Smartphone, Share2, Globe } from "lucide-react";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
@@ -5,10 +6,18 @@ import { Button } from "@/components/ui/Button";
 
 export function InstallPrompt() {
   const { install, dismiss, showPrompt, isInstallable, isIOS } = useInstallPrompt();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 640);
+    const onResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   return (
     <AnimatePresence>
-      {showPrompt && (
+      {showPrompt && isMobile && (
         <motion.div
           initial={{ opacity: 0, y: 60, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -38,7 +47,9 @@ export function InstallPrompt() {
                 <p className="text-xs text-text-secondary mt-0.5">
                   {isInstallable
                     ? "Add to your home screen for quick access."
-                    : "Tap Share then Add to Home Screen to install."}
+                    : isIOS
+                    ? "Tap Share then Add to Home Screen to install."
+                    : "Use browser menu to add to home screen."}
                 </p>
               </div>
             </div>
