@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, Smartphone, Share2, Globe } from "lucide-react";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
@@ -6,18 +5,10 @@ import { Button } from "@/components/ui/Button";
 
 export function InstallPrompt() {
   const { install, dismiss, showPrompt, isInstallable, isIOS } = useInstallPrompt();
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 640);
-    const onResize = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   return (
     <AnimatePresence>
-      {showPrompt && isMobile && (
+      {showPrompt && (
         <motion.div
           initial={{ opacity: 0, y: 60, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
