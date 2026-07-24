@@ -279,7 +279,7 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
                       const rect = notifBtnRef.current?.getBoundingClientRect();
                       if (rect) {
                         setNotifPos({
-                          right: window.innerWidth - rect.right,
+                          right: window.innerWidth >= 640 ? window.innerWidth - rect.right : 16,
                           top: rect.bottom + 8,
                         });
                       }
@@ -303,8 +303,12 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
                 {notifOpen && createPortal(
                   <div
                     ref={notifMenuRef}
-                    className="fixed w-80 sm:w-96 bg-bg-card border border-border rounded-xl shadow-xl z-[999]"
-                    style={{ right: notifPos.right, top: notifPos.top }}
+                    className="fixed sm:w-96 bg-bg-card border border-border rounded-xl shadow-xl z-[999]"
+                    style={{
+                      left: window.innerWidth < 640 ? 16 : undefined,
+                      right: notifPos.right,
+                      top: notifPos.top,
+                    }}
                     role="menu"
                   >
                     <div className="flex items-center justify-between px-4 py-3 border-b border-border">

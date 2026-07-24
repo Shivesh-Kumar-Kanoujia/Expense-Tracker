@@ -129,39 +129,47 @@ export function FilterBar({
             icon={<Search className="h-4 w-4" />}
           />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {datePresets.map((preset) => (
-            <Button
-              key={preset.value}
-              variant={activePreset === preset.value ? "primary" : "secondary"}
-              size="sm"
-              onClick={() => handlePreset(preset.value)}
-            >
-              {preset.label}
-            </Button>
-          ))}
-          {activePreset === "custom" && (
-            <span className="text-xs text-text-secondary font-medium">Custom:</span>
-          )}
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => {
-              setActivePreset("custom");
-              onDateChange(e.target.value, dateTo);
-            }}
-            className="bg-bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-          <span className="text-text-muted text-sm">—</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => {
-              setActivePreset("custom");
-              onDateChange(dateFrom, e.target.value);
-            }}
-            className="bg-bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
-          />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {datePresets.map((preset) => (
+              <Button
+                key={preset.value}
+                variant={activePreset === preset.value ? "primary" : "secondary"}
+                size="sm"
+                onClick={() => handlePreset(preset.value)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {activePreset === "custom" && (
+              <span className="text-xs text-text-secondary font-medium">Custom:</span>
+            )}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <label className="text-xs text-text-muted sm:hidden">From</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => {
+                  setActivePreset("custom");
+                  onDateChange(e.target.value, dateTo);
+                }}
+                className="flex-1 sm:flex-none bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+              <span className="text-text-muted text-sm flex-shrink-0 hidden sm:inline">—</span>
+              <label className="text-xs text-text-muted sm:hidden">To</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => {
+                  setActivePreset("custom");
+                  onDateChange(dateFrom, e.target.value);
+                }}
+                className="flex-1 sm:flex-none bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
