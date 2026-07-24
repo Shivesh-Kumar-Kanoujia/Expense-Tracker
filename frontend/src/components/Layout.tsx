@@ -41,7 +41,7 @@ export default function Layout() {
           </div>
         </div>
       ) : (
-        <div className="flex min-h-screen bg-bg">
+        <div className="flex min-h-screen bg-bg overflow-x-hidden">
           <Sidebar
             collapsed={collapsed}
             onToggle={() => setCollapsed((c) => !c)}

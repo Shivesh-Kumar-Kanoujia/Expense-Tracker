@@ -256,14 +256,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          onClick={() => navigate("/add")}
-          className="flex items-center gap-2 px-5 py-3 bg-accent text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group"
-        >
-          <PlusCircle className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
-          Add Expense
-        </button>
+      <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2">
           <button
             onClick={async () => {

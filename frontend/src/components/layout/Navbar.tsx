@@ -192,50 +192,59 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
       >
         <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-50 pointer-events-none" />
 
-        <button
-          onClick={onMenuToggle}
-          className="lg:hidden p-3 -ml-2 rounded-lg text-text-muted hover:text-text hover:bg-bg-card-hover transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          aria-label="Toggle navigation menu"
-        >
-          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+          <button
+            onClick={onMenuToggle}
+            className="lg:hidden p-3 -ml-2 rounded-lg text-text-muted hover:text-text hover:bg-bg-card-hover transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            aria-label="Toggle navigation menu"
+          >
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
 
-        <div className="w-[35%] min-w-[120px] sm:min-w-[200px] max-w-md mx-2 lg:mx-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-            <input
-              type="text"
-              placeholder="Search expenses, categories, merchants..."
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              className={cn(
-                "w-full bg-bg-card-hover/50 border rounded-xl pl-10 pr-4 py-2.5 text-sm text-text placeholder:text-text-muted outline-none transition-all duration-300",
-                searchFocused ? "border-accent ring-[3px] ring-accent/20 shadow-lg shadow-accent/5 scale-[1.02]" : "border-border hover:border-border-strong"
-              )}
-            />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-text-muted bg-bg-card-hover rounded border border-border">
-              ⌘K
-            </kbd>
+          <Link to="/expenses" className="lg:hidden p-3 -ml-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-card-hover transition-colors" aria-label="Search expenses">
+            <Search className="h-5 w-5" />
+          </Link>
+
+          <div className="hidden sm:block w-[35%] min-w-[200px] max-w-md mx-2 lg:mx-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+              <input
+                type="text"
+                placeholder="Search expenses, categories, merchants..."
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                className={cn(
+                  "w-full bg-bg-card-hover/50 border rounded-xl pl-10 pr-4 py-2.5 text-sm text-text placeholder:text-text-muted outline-none transition-all duration-300",
+                  searchFocused ? "border-accent ring-[3px] ring-accent/20 shadow-lg shadow-accent/5 scale-[1.02]" : "border-border hover:border-border-strong"
+                )}
+              />
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-text-muted bg-bg-card-hover rounded border border-border">
+                ⌘K
+              </kbd>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <motion.button
+            <motion.button
             onClick={toggleTheme}
             className={cn(
-              "relative h-9 w-[72px] rounded-full bg-bg-card-hover border border-border transition-all duration-300 flex-shrink-0",
+              "relative h-9 w-9 sm:w-[72px] rounded-full bg-bg-card-hover border border-border transition-all duration-300 flex-shrink-0",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
               glowClass
             )}
             aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
             whileTap={{ scale: 0.95 }}
           >
+            <span className="flex items-center justify-center h-full w-full sm:hidden">
+              {theme === "light" ? <Moon className="h-4 w-4 text-accent" /> : <Sun className="h-4 w-4 text-accent" />}
+            </span>
             <motion.div
-              className="absolute top-0.5 left-0.5 h-8 w-8 rounded-full bg-accent flex items-center justify-center shadow-sm"
+              className="absolute top-0.5 left-0.5 h-8 w-8 rounded-full bg-accent hidden sm:flex items-center justify-center shadow-sm"
               animate={{ x: theme === "dark" ? 38 : 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             >
@@ -247,12 +256,14 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
             </motion.div>
           </motion.button>
 
+
+
           {user ? (
             <>
               <Link
                 to="/add"
                 className={cn(
-                  "flex items-center gap-1.5 px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-fast group flex-shrink-0",
+                  "flex items-center gap-1.5 px-3 sm:px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-fast group flex-shrink-0",
                   glowClass
                 )}
               >

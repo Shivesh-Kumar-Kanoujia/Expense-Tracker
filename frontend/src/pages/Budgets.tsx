@@ -77,11 +77,11 @@ export default function Budgets() {
         title="Budgets"
         description="Set monthly spending limits"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="bg-bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+              className="flex-1 sm:flex-none bg-bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
             >
               {MONTHS.map((name, i) => (
                 <option key={i + 1} value={i + 1}>{name}</option>
@@ -90,7 +90,7 @@ export default function Budgets() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="bg-bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+              className="flex-1 sm:flex-none bg-bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
             >
               {[selectedYear - 1, selectedYear, selectedYear + 1].map((y) => (
                 <option key={y} value={y}>{y}</option>

@@ -330,12 +330,12 @@ export default function Analytics() {
                   <CardDescription>Your spending over time</CardDescription>
                 </div>
                 {trends && trends.length > 0 && (
-                  <div className="flex items-center gap-1 p-0.5 bg-bg-card-hover/50 rounded-lg border border-border w-fit">
+                  <div className="flex flex-wrap items-center gap-1 p-0.5 bg-bg-card-hover/50 rounded-lg border border-border">
                     {RANGE_OPTIONS.map((lbl) => (
                       <button
                         key={lbl}
                         onClick={() => setRange(lbl)}
-                        className={`px-3 py-2 text-xs font-medium rounded-md transition-colors min-h-[44px] ${
+                        className={`px-2 sm:px-3 py-2 text-xs font-medium rounded-md transition-colors min-h-[44px] ${
                            range === lbl
                              ? "bg-text text-bg shadow-sm"
                              : "text-text-secondary hover:text-text"

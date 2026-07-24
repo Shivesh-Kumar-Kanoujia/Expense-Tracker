@@ -19,7 +19,7 @@ interface StatsCardProps {
 export function StatsCard({ label, value, subtitle, trend, icon, className }: StatsCardProps) {
   return (
     <Card className={cn("relative overflow-hidden group hover:shadow-glass hover:-translate-y-1 transition-all duration-300", className)}>
-      <CardContent className="p-5">
+      <CardContent className="p-4 lg:p-5">
         <div className="flex items-start justify-between">
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">{label}</p>

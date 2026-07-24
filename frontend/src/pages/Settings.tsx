@@ -225,11 +225,11 @@ export default function Settings() {
                 key={t}
                 type="button"
                 onClick={() => setTheme(t)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-fast ${
-                  theme === t
-                    ? "border-accent bg-accent-light/10 text-accent"
-                    : "border-border bg-bg-card-hover/30 text-text-secondary hover:border-text-muted"
-                }`}
+                className={`flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-all duration-fast ${
+                   theme === t
+                     ? "border-accent bg-accent-light/10 text-accent"
+                     : "border-border bg-bg-card-hover/30 text-text-secondary hover:border-text-muted"
+                 }`}
               >
                 {t === "light" ? <Sun className="h-6 w-6" /> : t === "dark" ? <Moon className="h-6 w-6" /> : <Globe className="h-6 w-6" />}
                 <span className="text-sm font-medium capitalize">{t}</span>
@@ -258,10 +258,10 @@ export default function Settings() {
                 key={c.value}
                 type="button"
                 onClick={() => { setCurrency(c.value); showToast(`Currency set to ${c.label}`, "success"); }}
-                className={`flex flex-col items-center gap-1 p-4 rounded-xl border-2 transition-all duration-fast ${
-                  currency === c.value
-                    ? "border-accent bg-accent-light/10 text-accent"
-                    : "border-border bg-bg-card-hover/30 text-text-secondary hover:border-text-muted"
+                className={`flex flex-col items-center gap-1 p-3 sm:p-4 rounded-xl border-2 transition-all duration-fast ${
+                   currency === c.value
+                     ? "border-accent bg-accent-light/10 text-accent"
+                     : "border-border bg-bg-card-hover/30 text-text-secondary hover:border-text-muted"
                 }`}
               >
                 <span className="text-xl font-bold">{c.symbol}</span>
