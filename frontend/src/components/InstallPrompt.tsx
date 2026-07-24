@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Download, Smartphone, Share2 } from "lucide-react";
+import { X, Download, Smartphone, Share2, Globe } from "lucide-react";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { Button } from "@/components/ui/Button";
 
@@ -53,7 +53,12 @@ export function InstallPrompt() {
                   <Share2 className="h-3.5 w-3.5 flex-shrink-0" />
                   <span>Safari Share menu <span className="hidden sm:inline">→ Add to Home Screen</span></span>
                 </div>
-              ) : null}
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-text-muted bg-bg-card-hover/50 rounded-lg px-3 py-2 w-full">
+                  <Globe className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span>Browser menu <span className="hidden sm:inline">→ Add to Home Screen</span></span>
+                </div>
+              )}
               <Button variant="ghost" size="sm" onClick={dismiss}>
                 Not now
               </Button>

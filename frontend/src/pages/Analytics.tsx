@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, chartColors } from "@/lib/utils";
 import { CATEGORY_COLORS } from "@/lib/constants";
+import { useToast } from "@/components/ui/Toast";
 import { TrendingUp, TrendingDown, Download, RefreshCw, AlertTriangle, PieChart, Award } from "lucide-react";
 import { Bar, Doughnut } from "react-chartjs-2";
 import {
@@ -54,6 +55,7 @@ function filterTrends(trends: { year: number; month: number; total: number; coun
 }
 
 export default function Analytics() {
+  const { showToast } = useToast();
   const isDark = useIsDark();
   const { authResolved, user } = useAuth();
   const canFetch = authResolved && !!user;
@@ -240,20 +242,34 @@ export default function Analytics() {
               <Button
                 variant="ghost"
                 icon={<Download className="h-4 w-4" />}
-                onClick={() => {
-                  const csv = [
-                    ["Month", "Amount"].join(","),
-                    ...(trends ?? []).map((t) => [`${MONTH_NAMES[t.month - 1]} ${t.year}`, t.total].join(",")),
-                  ].join("\n");
-                  const blob = new Blob([csv], { type: "text/csv" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "expense-report.csv";
-                  a.click();
-                  URL.revokeObjectURL(url);
+                onClick={async () => {
+                  try {
+                    showToast("Exporting expenses...", "info");
+                    const { getExpenses } = await import("@/api/expenses");
+                    const res = await getExpenses({ per_page: 10000, sort_field: "date", sort_order: "desc" });
+                    const rows = res.expenses ?? [];
+                    if (rows.length === 0) {
+                      showToast("No expenses to export", "warning");
+                      return;
+                    }
+                    const csv = [
+                      ["Date", "Description", "Category", "Amount"].join(","),
+                      ...rows.map((e: any) =>
+                        [`"${e.date}"`, `"${(e.description || "").replace(/"/g, '""')}"`, `"${e.category}"`, e.amount].join(",")
+                      ),
+                    ].join("\n");
+                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "expenses.csv";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast("Expenses exported", "success");
+                  } catch {
+                    showToast("Export failed. Check console for details.", "error");
+                  }
                 }}
-                disabled={!trends || trends.length === 0}
               >
                 Export Report
               </Button>
