@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Loader2, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sendMessage } from "@/api/chat";
 
@@ -55,6 +55,11 @@ export default function Chatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [listening, setListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const recognitionRef = useRef<any>(null);
+  const voiceJustFinished = useRef(false);
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
@@ -90,6 +95,65 @@ export default function Chatbot() {
       setLoading(false);
     }
   }, [input, loading]);
+
+  const handleSendRef = useRef(handleSend);
+
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  }, [handleSend]);
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      voiceJustFinished.current = true;
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+
+    recognition.onerror = () => {
+      setListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    return () => {
+      try { recognition.abort(); } catch {}
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!listening && voiceJustFinished.current) {
+      voiceJustFinished.current = false;
+      const timer = setTimeout(() => handleSendRef.current(), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [listening, handleSend]);
+
+  const toggleListening = useCallback(() => {
+    if (listening) {
+      recognitionRef.current?.abort();
+      setListening(false);
+      return;
+    }
+    try {
+      recognitionRef.current?.start();
+      setListening(true);
+    } catch {
+      setListening(false);
+    }
+  }, [listening]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -168,6 +232,21 @@ export default function Chatbot() {
                     "disabled:opacity-50 transition-all"
                   )}
                 />
+                {speechSupported && (
+                  <button
+                    onClick={toggleListening}
+                    disabled={loading}
+                    className={cn(
+                      "h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
+                      listening
+                        ? "bg-error/15 text-error animate-pulse"
+                        : "bg-bg-card-hover text-text-muted hover:text-text hover:bg-bg-card-hover/80"
+                    )}
+                    aria-label={listening ? "Stop listening" : "Voice input"}
+                  >
+                    {listening ? <Mic className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </button>
+                )}
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || loading}
